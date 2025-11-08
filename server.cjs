@@ -10,7 +10,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Get ML service URL from environment (Render provides this)
-const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'https://object-detection-ml-y5v2.onrender.com';
+const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'https://object-detection-ml-58ow.onrender.com';
 
 // Middlewares
 app.set('trust proxy', 1);

@@ -71,7 +71,7 @@ async function resizeImage(blob, maxWidth = 640) {
   });
 }
 
-const ML_BACKEND = 'https://object-detection-ml-y5v2.onrender.com';
+const ML_BACKEND = 'https://object-detection-ml-58ow.onrender.com';
 
 async function postToDetectFromBlob(blob) {
   console.log('📤 Posting to /detect, blob size:', blob.size);
