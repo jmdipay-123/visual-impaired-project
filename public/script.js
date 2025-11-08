@@ -194,6 +194,9 @@ function getCurrentLanguageSafe() {
 
 // Cebuano per-label audio (person/door/stairs). Returns true if it played.
 async function speakCebuanoDetection(dets) {
+console.log('Detection label:', key);
+console.log('Selected audio:', src);
+
   const lang = getCurrentLanguageSafe();
   if (lang !== 'ceb') return false;
   if (!dets?.length) return false;
