@@ -139,13 +139,10 @@ async function renderResults(data) {
   const detections = dets.map(o => {
     let c = Number(o.conf ?? o.confidence ?? o.score ?? 0);
     if (c > 1) c = c / 100; // normalize to 0..1 if needed
-    return {
-      label: String(o.label ?? o.name ?? o.class ?? 'object'),
-      conf: c
-    };
+    return { label: String(o.label ?? o.name ?? o.class ?? 'object'), conf: c };
   });
 
-  // Cebuano audio clips first; fallback to server/local TTS
+  // 1) Cebuano audio clips first; 2) fallback to server/local TTS
   try {
     const didSpeak = await speakCebuanoDetection(detections);
     if (!didSpeak) {
@@ -170,7 +167,7 @@ async function renderResults(data) {
     console.warn('TTS announce failed:', e);
   }
 
-  // Results list
+  // Results list UI
   if (resultList) {
     resultList.innerHTML = dets.length
       ? dets.map(d => `
@@ -184,154 +181,66 @@ async function renderResults(data) {
             </span>
           </li>`).join('')
       : `<li style="padding:20px;text-align:center;color:#999;font-style:italic;">${t('noObjectsDetected')}</li>`;
-    resultList.parentElement && (resultList.parentElement.style.display = 'block');
+    if (resultList.parentElement) resultList.parentElement.style.display = 'block';
     console.log('✅ Results list updated');
   }
 }
 
-
-// If Cebuano is active and we have clips, this will speak and return true.
-// If not, we fall back to your existing server/client TTS.
-const didSpeakCebuano = await speakCebuanoDetection(detections);
-if (!didSpeakCebuano) {
-  // ... your existing line-building + speakServer(line) or speakLocal()
+// --- helpers for TTS ---
+function getCurrentLanguageSafe() {
+  try { return (typeof getCurrentLanguage === 'function') ? getCurrentLanguage() : 'en'; }
+  catch { return 'en'; }
 }
 
-
-  // Update results list
-  if (resultList) {
-    const confidenceText = t('confidence');
-    resultList.innerHTML = dets.length
-      ? dets.map(d => `<li style="padding: 12px 15px; margin: 8px 0; background: linear-gradient(90deg, #f0f8ff 0%, #ffffff 100%); border-left: 4px solid #28A745; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
-          <span style="color: #333; font-weight: 500;">
-            <i class="fas fa-tag" style="color: #28A745; margin-right: 8px;"></i>
-            ${d.label}
-          </span>
-          <span style="background: #28A745; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">
-            ${(d.conf * 100).toFixed(1)}%
-          </span>
-        </li>`).join('')
-      : `<li style="padding: 20px; text-align: center; color: #999; font-style: italic;">${t('noObjectsDetected')}</li>`;
-    resultList.parentElement.style.display = 'block';
-    console.log('✅ Results list updated');
-  }
-
-  // --- Speak via server TTS (now safely inside the function that HAS `data`) ---
-  try {
-    const raw = data?.detections ?? data?.objects ?? data?.results ?? [];
-    const detections = (Array.isArray(raw) ? raw : []).map(o => {
-      let conf = o.conf ?? o.confidence ?? o.score ?? 0;
-      if (conf > 1) conf /= 100; // normalize to 0..1
-      return { label: o.label ?? o.name ?? o.class ?? 'object', conf: Number(conf) || 0 };
-    });
-
-    const complete = t('voiceAnalysisComplete','Analysis complete');
-    const detected = t('voiceDetected','Detected');
-    const withWord = t('voiceWith','with');
-    const confWord = t('voiceConfidence','confidence');
-    const noneText = t('voiceNoObjects','No objects detected in this image');
-
-    let line;
-    const sorted = [...detections].sort((a,b) => (b.conf||0) - (a.conf||0));
-    if (!sorted.length) {
-      line = `${complete}. ${noneText}.`;
-    } else {
-      const top = sorted[0];
-      const pct = Math.round((top.conf || 0) * 100);
-      line = `${complete}. ${detected} ${top.label} ${withWord} ${pct}% ${confWord}.`;
-    }   
-    console.log('🔊 TTS line:', line);
-    // will play via the server TTS endpoint
-    speakServer(line);
-  } catch (e) {
-    console.warn('Server TTS announce failed:', e);
-  }
-
-
-
-// ---- Cebuano audio sprite ----
-const audioExt = (new Audio()).canPlayType('audio/mpeg') ? 'mp3' : 'm4a';
-const CEB_BASE = '/audio/ceb';
-
-const cebClips = {
-  phrases: {
-    analysis_complete: `${CEB_BASE}/phrases/analysis_complete.${audioExt}`,
-    detected:          `${CEB_BASE}/phrases/detected.${audioExt}`,
-    with:              `${CEB_BASE}/phrases/with.${audioExt}`,
-    percent_conf:      `${CEB_BASE}/phrases/percent_conf.${audioExt}`,
-    no_objects:        `${CEB_BASE}/phrases/no_objects.${audioExt}`,
-  },
-  labels: {
-    person: `${CEB_BASE}/labels/person.${audioExt}`,
-    door:   `${CEB_BASE}/labels/door.${audioExt}`,
-    stairs: `${CEB_BASE}/labels/stairs.${audioExt}`,
-    // add more labels if your model has them
-  }
-};
-
-const cebNum = n => {
-  const r = Math.max(0, Math.min(100, Math.round(n / 5) * 5)); // round to nearest 5
-  return `${CEB_BASE}/numbers/${r}.${audioExt}`;
-};
-
-function playSeq(paths, { volume = 1.0 } = {}) {
-  return new Promise(resolve => {
-    let i = 0;
-    const next = () => {
-      if (i >= paths.length) return resolve();
-      const a = new Audio(paths[i++]);
-      a.volume = volume;
-      a.addEventListener('ended', next, { once: true });
-      a.play().catch(() => resolve()); // don’t hang if blocked
-    };
-    next();
-  });
-}
-
-// Try to speak in Cebuano; returns true if handled, else false so you can fall back.
+// Cebuano per-label audio (person/door/stairs). Returns true if it played.
 async function speakCebuanoDetection(dets) {
-  const lang = (typeof getCurrentLanguage === 'function') ? getCurrentLanguage() : 'en';
+  const lang = getCurrentLanguageSafe();
   if (lang !== 'ceb') return false;
+  if (!dets?.length) return false;
 
-  // no objects
-  if (!dets || !dets.length) {
-    await playSeq([cebClips.phrases.analysis_complete, cebClips.phrases.no_objects]);
-    return true;
-  }
-
-  // top object
   const top = [...dets].sort((a,b) => (b.conf||0) - (a.conf||0))[0];
-  const pct = Math.round((top.conf || 0) * 100);
-  const labelKey = (String(top.label || '').toLowerCase());
-  const labelPath = cebClips.labels[labelKey];
+  const key = String(top.label || '').toLowerCase();
 
-  // If you haven’t recorded phrases/numbers yet, do a minimal announce:
-  if (!labelPath || !cebClips.phrases.detected) {
-    await playSeq([labelPath].filter(Boolean));  // just the label clip
-    return true;
+  const clipMap = {
+    person: '/audio/person.m4a',
+    door:   '/audio/door.m4a',
+    stairs: '/audio/stairs.m4a'
+  };
+  const src = clipMap[key];
+  if (!src) return false;
+
+  // Use existing <audio id="ttsAudio"> or create one
+  let a = document.getElementById('ttsAudio');
+  if (!a) {
+    a = new Audio();
+    a.id = 'ttsAudio';
+    a.preload = 'none';
+    a.crossOrigin = 'anonymous';
+    a.setAttribute('playsinline','');
+    document.body.appendChild(a);
   }
 
-  // Full sentence: “Analysis complete. Detected <label> with <NN> percent confidence.”
-  await playSeq([
-    cebClips.phrases.analysis_complete,
-    cebClips.phrases.detected,
-    labelPath,
-    cebClips.phrases.with,
-    cebNum(pct),
-    cebClips.phrases.percent_conf
-  ]);
-  return true;
+  try {
+    a.pause();
+    a.currentTime = 0;
+    a.src = src;
+    await a.play();
+    return true;
+  } catch (e) {
+    console.warn('Cebuano clip play failed:', e);
+    return false;
+  }
 }
 
-// (optional) Preload to avoid first-play delay
-(function preloadCebuano(){
-  const all = [
-    ...Object.values(cebClips.phrases),
-    ...Object.values(cebClips.labels),
-    ...Array.from({length:21}, (_,i)=>cebNum(i*5))
-  ];
-  all.forEach(p => { const a = new Audio(p); a.preload = 'auto'; });
+// (optional) tiny preloader for the three clips so first play is snappy
+(function preloadCebuanoSimple(){
+  ['/audio/person.m4a','/audio/door.m4a','/audio/stairs.m4a'].forEach(p => {
+    const a = new Audio();
+    a.preload = 'auto';
+    a.src = p;
+  });
 })();
+
 
 
   
