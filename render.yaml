@@ -1,0 +1,26 @@
+services:
+  # Python ML Service
+  - type: web
+    name: object-detection-ml
+    runtime: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn ml_server.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+    plan: free
+
+  # Node.js Frontend Service
+  - type: web
+    name: object-detection-frontend
+    runtime: node
+    buildCommand: "npm install"
+    startCommand: "node server.cjs" 
+    envVars:
+      - key: ML_SERVICE_URL
+        fromService:
+          type: web
+          name: object-detection-ml
+          property: host
+    plan: free
+    
