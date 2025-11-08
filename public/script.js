@@ -197,20 +197,20 @@ async function speakCebuanoDetection(dets) {
   const lang = getCurrentLanguageSafe();
   if (lang !== 'ceb') return false;
   if (!dets?.length) return false;
-
+  
   const top = [...dets].sort((a,b) => (b.conf||0) - (a.conf||0))[0];
   const key = String(top.label || '').toLowerCase();
-
+  
   const clipMap = {
     person: './audio/person.mp3',
     door:   './audio/door.mp3',
     stairs: './audio/stairs.mp3',
-    none: './audio/none.mp3'
+    none:   './audio/none.mp3'
   };
-  const src = clipMap[key];
-  if (!src) return false;
-
-  // Use existing <audio id="ttsAudio"> or create one
+  
+  // Use the matched clip, or default to 'none.mp3' for unrecognized labels
+  const src = clipMap[key] || clipMap.none;
+  
   let a = document.getElementById('ttsAudio');
   if (!a) {
     a = new Audio();
@@ -220,13 +220,13 @@ async function speakCebuanoDetection(dets) {
     a.setAttribute('playsinline','');
     document.body.appendChild(a);
   }
-
+  
   try {
     a.pause();
     a.currentTime = 0;
     a.src = src;
     await a.play();
-    return true;
+    return true;  // Always return true for Cebuano language
   } catch (e) {
     console.warn('Cebuano clip play failed:', e);
     return false;
