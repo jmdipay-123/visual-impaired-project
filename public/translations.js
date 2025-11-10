@@ -72,7 +72,11 @@ const translations = {
 
     // Location title
     locationTitle: "Your Location Map",
-    locationUsingSaved: "Using saved location"
+    locationUsingSaved: "Using saved location",
+
+    // voiceannouncements
+    voiceResultWithObject: "Analysis complete. Detected {label} with {confidence} percent confidence",
+    voiceResultNoObject: "Analysis complete. No objects detected in this image"
 
   },
   
@@ -140,6 +144,9 @@ const translations = {
     objectStairsTitle: "Hagdan",
     objectStairsDesc: "Natutukoy ng camera ang mga hagdan upang matulungan sa ligtas na paggalaw at nabigasyon.",
 
+     // voiceannouncements
+    voiceResultWithObject: "Tapos na ang pagsusuri. Nadetect ang {label} na may {confidence} porsyentong katiyakan",
+    voiceResultNoObject: "Tapos na ang pagsusuri. Walang nadetect na bagay sa larawang ito",
     
     // Footer
     copyright: "© 2025 Pagkilala ng Bagay at Nabigasyon. Lahat ng karapatan ay nakalaan."
@@ -212,7 +219,11 @@ const translations = {
 
 
     // Footer
-    copyright: "© 2025 Pag-ila sa Butang ug Nabigasyon. Tanang katungod gitagana."
+    copyright: "© 2025 Pag-ila sa Butang ug Nabigasyon. Tanang katungod gitagana.",
+
+    // announcements
+    voiceResultWithObject: "Nahuman na ang pagsusi. Nakit-an ang {label} nga adunay {confidence} porsyento nga kasigurohan",
+    voiceResultNoObject: "Nahuman na ang pagsusi. Walay nakit-ang butang sa imahe"
   }
 };
 

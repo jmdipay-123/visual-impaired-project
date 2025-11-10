@@ -142,23 +142,20 @@ async function renderResults(data) {
     return { label: String(o.label ?? o.name ?? o.class ?? 'object'), conf: c };
   });
 
+
   // 1) Cebuano audio clips first; 2) fallback to server/local TTS
   try {
     const didSpeak = await speakCebuanoDetection(detections);
     if (!didSpeak) {
-      const complete = t('voiceAnalysisComplete','Analysis complete');
-      const detected = t('voiceDetected','Detected');
-      const withWord = t('voiceWith','with');
-      const confWord = t('voiceConfidence','confidence');
-      const noneText = t('voiceNoObjects','No objects detected in this image');
-
       let line;
       if (!detections.length) {
-        line = `${complete}. ${noneText}.`;
+        line = t('voiceResultNoObject');
       } else {
-        const top = [...detections].sort((a,b) => (b.conf||0) - (a.conf||0))[0];
+        const top = [...detections].sort((a, b) => (b.conf || 0) - (a.conf || 0))[0];
         const pct = Math.round((top.conf || 0) * 100);
-        line = `${complete}. ${detected} ${top.label} ${withWord} ${pct}% ${confWord}.`;
+        line = t('voiceResultWithObject')
+          .replace('{label}', top.label)
+          .replace('{confidence}', pct);
       }
       console.log('🔊 TTS line:', line);
       await speakServer(line).catch(() => speakLocal(line));
