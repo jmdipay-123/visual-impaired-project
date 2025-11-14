@@ -354,85 +354,105 @@
   // ANNOUNCE DETECTIONS
   // ========================================
 
-  function announceDetections(predictions) {
-    if (!predictions || predictions.length === 0) {
-      lastDetectedObjects.clear();
-      return;
-    }
+// ========================================
+// ANNOUNCE DETECTIONS
+// ========================================
 
-    const now = Date.now();
-    if (now - lastAnnouncement < 3000) {
-      return;
-    }
+function announceDetections(predictions) {
+  if (!predictions || predictions.length === 0) {
+    lastDetectedObjects.clear();
+    return;
+  }
 
-    const currentObjects = new Set(
-      predictions.map(p => p.class.toLowerCase())
-    );
+  const now = Date.now();
+  if (now - lastAnnouncement < 3000) {
+    // avoid spamming every frame
+    return;
+  }
 
-    const hasNewObjects = Array.from(currentObjects).some(
-      obj => !lastDetectedObjects.has(obj)
-    );
+  // Collect unique classes from this frame
+  const currentObjects = new Set(
+    predictions.map(p => p.class.toLowerCase())
+  );
 
-    if (!hasNewObjects && lastDetectedObjects.size > 0) {
-      return;
-    }
+  // Only announce if there's something new vs last frame
+  const hasNewObjects = Array.from(currentObjects).some(
+    obj => !lastDetectedObjects.has(obj)
+  );
 
-    const sortedObjects = Array.from(currentObjects).sort((a, b) => {
-      const priorityA = OBJECT_PRIORITY[a] || 0;
-      const priorityB = OBJECT_PRIORITY[b] || 0;
-      return priorityB - priorityA;
-    });
+  if (!hasNewObjects && lastDetectedObjects.size > 0) {
+    return;
+  }
 
-    if (sortedObjects.length > 0) {
-      const objectToAnnounce = sortedObjects[0];
-      const count = predictions.filter(
-        p => p.class.toLowerCase() === objectToAnnounce
-      ).length;
+  // Sort by priority (stairs > people > door > others)
+  const sortedObjects = Array.from(currentObjects).sort((a, b) => {
+    const priorityA = OBJECT_PRIORITY[a] || 0;
+    const priorityB = OBJECT_PRIORITY[b] || 0;
+    return priorityB - priorityA;
+  });
 
-      let message = '';
-      let audioKey = 'generic';
+  if (sortedObjects.length > 0) {
+    const objectToAnnounce = sortedObjects[0];
+    const count = predictions.filter(
+      p => p.class.toLowerCase() === objectToAnnounce
+    ).length;
 
-      if (objectToAnnounce.includes('stair')) {
-        message = window.t ? window.t('stairsWarning') : 'Warning! Stairs ahead';
-        audioKey = 'stairsWarning';
-        vibratePhone([200, 100, 200]);
-      } else if (objectToAnnounce.includes('people') || objectToAnnounce.includes('person')) {
-        if (count > 1) {
-          message = window.t ? `${count} ${window.t('peopleDetected')}` : `${count} people detected`;
-          audioKey = 'personMultiple';
-        } else {
-          message = window.t ? window.t('personDetected') : 'Person detected';
-          audioKey = 'personSingle';
-        }
-      } else if (objectToAnnounce.includes('door')) {
-        if (count > 1) {
-          message = window.t ? `${count} ${window.t('doorsDetected')}` : `${count} doors detected`;
-          audioKey = 'doorMultiple';
-        } else {
-          message = window.t ? window.t('doorAhead') : 'Door ahead';
-          audioKey = 'doorSingle';
-        }
-      } else {
+    let message = '';
+    let audioKey = 'generic';
+
+    if (objectToAnnounce.includes('stair')) {
+      message = window.t ? window.t('stairsWarning') : 'Warning! Stairs ahead';
+      audioKey = 'stairsWarning';
+      vibratePhone([200, 100, 200]);
+    } else if (objectToAnnounce.includes('people') || objectToAnnounce.includes('person')) {
+      if (count > 1) {
         message = window.t
-          ? `${objectToAnnounce} ${window.t('objectDetected')}`
-          : `${objectToAnnounce} detected`;
-        audioKey = 'generic';
+          ? `${count} ${window.t('peopleDetected')}`
+          : `${count} people detected`;
+        audioKey = 'personMultiple';
+      } else {
+        message = window.t ? window.t('personDetected') : 'Person detected';
+        audioKey = 'personSingle';
       }
+    } else if (objectToAnnounce.includes('door')) {
+      if (count > 1) {
+        message = window.t
+          ? `${count} ${window.t('doorsDetected')}`
+          : `${count} doors detected`;
+        audioKey = 'doorMultiple';
+      } else {
+        message = window.t ? window.t('doorAhead') : 'Door ahead';
+        audioKey = 'doorSingle';
+      }
+    } else {
+      message = window.t
+        ? `${objectToAnnounce} ${window.t('objectDetected')}`
+        : `${objectToAnnounce} detected`;
+      audioKey = 'generic';
+    }
 
-      // 🔊 Use MP3 audio (works in WebView / mobile)
+    // 🔊 SMART AUDIO LOGIC
+    // Use recorded MP3 for Tagalog/Cebuano, TTS for English (with MP3 fallback)
+    const langCode = getCurrentLanguageCode(); // 'en', 'ta', or 'ce'
+
+    if (langCode === 'ta' || langCode === 'ce') {
+      // Tagalog or Cebuano → use only MP3 prompts
       playAudioPrompt(audioKey);
-
-      // Optional: keep speechSynthesis for desktop browsers only
+    } else {
+      // English → prefer TTS; if not available, fall back to MP3
       if ('speechSynthesis' in window) {
         speak(message);
+      } else {
+        playAudioPrompt(audioKey);
       }
-
-      console.log('Announcement:', message);
-
-      lastAnnouncement = now;
-      lastDetectedObjects = currentObjects;
     }
+
+    console.log('Announcement:', message);
+
+    lastAnnouncement = now;
+    lastDetectedObjects = currentObjects;
   }
+}
 
   // ========================================
   // TEXT-TO-SPEECH
