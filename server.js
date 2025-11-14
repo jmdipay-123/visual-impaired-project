@@ -7,10 +7,7 @@ import multer from "multer";
 import cors from "cors";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
-import { processUpload } from "./lib/processUpload.js";
-import { getHistory } from "./lib/getHistory.js";
-import { getDiseaseSummary } from "./lib/summary.js";
-import { getDiseaseInfo } from "./lib/getDiseaseInfo.js";
+
 dotenv.config();
  
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
