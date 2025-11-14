@@ -482,9 +482,23 @@
   // ========================================
 
   // Helper: detect current UI language
-  function getCurrentLanguageCode() {
-    return detectionLanguage;
+function getCurrentLanguageCode() {
+  // Read the current language that translations.js / index.html is using
+  let lang =
+    (window.currentLanguage || document.documentElement.lang || 'en')
+      .toLowerCase()
+      .trim();
+
+  if (lang === 'tl' || lang === 'tagalog' || lang.startsWith('fil')) {
+    return 'ta'; // use /audio/ta/...
   }
+  if (lang === 'ceb' || lang === 'ce' || lang === 'cebuano') {
+    return 'ce'; // use /audio/ce/...
+  }
+
+  return 'en'; // default English
+}
+
 
   // Helper: pick an appropriate voice for the language
   function pickVoiceForLanguage(langCode) {

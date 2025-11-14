@@ -222,6 +222,9 @@ function updateButtonText(selector, iconClass, text) {
 // Change language
 function changeLanguage(lang) {
   if (translations[lang]) {
+
+    window.currentLanguage = lang;
+    document.documentElement.lang = lang;
     currentLanguage = lang;
     localStorage.setItem('language', lang);
     updatePageLanguage();
