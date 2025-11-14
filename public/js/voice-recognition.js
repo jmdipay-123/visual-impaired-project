@@ -296,7 +296,12 @@
       recognition.start();
       isListening = true;
       updateVoiceButton(true);
-      showVoiceMessage('Listening for voice commands...', 'info');
+      
+      // Only show message if manually started (not auto-start)
+      if (!AUTO_START || voiceButton.classList.contains('listening')) {
+        showVoiceMessage('Listening for voice commands...', 'info');
+      }
+      
       console.log('Voice recognition started');
       return true;
     } catch (error) {
@@ -355,8 +360,16 @@
     voiceButton = document.createElement('button');
     voiceButton.id = 'voiceRecognitionBtn';
     voiceButton.className = 'voice-btn';
-    voiceButton.innerHTML = '<i class="fas fa-microphone"></i>';
-    voiceButton.setAttribute('aria-label', 'Start voice commands');
+    
+    // Show appropriate icon based on auto-start
+    if (AUTO_START) {
+      voiceButton.innerHTML = '<i class="fas fa-microphone"></i>';
+      voiceButton.setAttribute('aria-label', 'Voice commands (always on - click to stop)');
+    } else {
+      voiceButton.innerHTML = '<i class="fas fa-microphone"></i>';
+      voiceButton.setAttribute('aria-label', 'Start voice commands');
+    }
+    
     voiceButton.onclick = toggleListening;
     
     // Add styles
@@ -458,16 +471,36 @@
   });
 
   // ========================================
+  // AUTO-START CONFIGURATION
+  // ========================================
+  
+  const AUTO_START = true; // Set to false to require button click
+  
+  // ========================================
   // INITIALIZE ON PAGE LOAD
   // ========================================
   
-  window.addEventListener('DOMContentLoaded', () => {
+  window.addEventListener('DOMContentLoaded', async () => {
     addStyles();
     createVoiceButton();
     
     if (isSupported) {
       console.log('Voice recognition available');
       console.log('Voice commands: "Change language to English/Tagalog/Cebuano"');
+      
+      // Auto-start voice recognition if enabled
+      if (AUTO_START) {
+        console.log('Auto-starting voice recognition...');
+        // Wait a bit for page to fully load
+        setTimeout(async () => {
+          const started = await startListening();
+          if (started) {
+            console.log('Voice recognition auto-started successfully');
+          } else {
+            console.log('Voice recognition auto-start failed - click microphone button to retry');
+          }
+        }, 1000);
+      }
     } else {
       console.log('Voice recognition not supported in this browser');
     }
