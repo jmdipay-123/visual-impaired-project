@@ -6,13 +6,63 @@
   // ROBOFLOW CONFIGURATION
   // ========================================
   const ROBOFLOW_CONFIG = {
-    apiKey: 'MvAPSE6lMWD1bxEBRpJZ',
-    modelId: 'trial-sjo4y',
+    apiKey: 'qjiHA3BXwtmd66jycXB8',
+    modelId: 'objdetection-jeqju',
     version: '1',
     confidenceThreshold: 40,
     fps: 4,
     apiBase: 'https://detect.roboflow.com'
   };
+
+  // ========================================
+  // CLASS NAME NORMALIZATION
+  // (Fix for corrupted Roboflow class names)
+  // ========================================
+  
+  // Map corrupted class names to proper ones
+  const CLASS_NAME_MAP = {
+    // User confirmed mapping:
+    '2': 'stairs',                           // Green class (4,027 images) ✅
+    '2 0 0 0 1 1 1 1 0 0 0': 'door',    // Red class (2,256 images) ✅
+    // Purple class (super long) - matches any class starting with "2 1 0-"
+    // This is PERSON (1,441 images) ✅
+  };
+
+  /**
+   * Normalize corrupted class names from Roboflow
+   * @param {string} className - Raw class name from API
+   * @returns {string} - Normalized class name (person, stairs, door)
+   */
+  function normalizeClassName(className) {
+    if (!className) return 'unknown';
+    
+    const cleanName = String(className).trim().toLowerCase();
+    
+    // Direct mapping for door and stairs
+    if (CLASS_NAME_MAP[cleanName]) {
+      return CLASS_NAME_MAP[cleanName];
+    }
+    
+    // Check for person (long numeric string starting with "2 1 0-")
+    if (cleanName.startsWith('2 1 0-') || cleanName.startsWith('2 1 0 -')) {
+      return 'person';
+    }
+    
+    // Fallback: check if it contains recognizable keywords
+    if (cleanName.includes('person') || cleanName.includes('people')) {
+      return 'person';
+    }
+    if (cleanName.includes('stair') || cleanName.includes('step')) {
+      return 'stairs';
+    }
+    if (cleanName.includes('door') || cleanName.includes('gate')) {
+      return 'door';
+    }
+    
+    // If nothing matches, log it for debugging
+    console.warn('Unknown class name:', className);
+    return cleanName;
+  }
 
   // ========================================
   // COLOR CONFIGURATION
@@ -244,7 +294,11 @@
     const scaleY = canvas.height / videoPreview.videoHeight;
 
     predictions.forEach(prediction => {
-      const label = prediction.class.toLowerCase();
+      // Normalize the class name (fix corrupted names from Roboflow)
+      const rawLabel = prediction.class;
+      const normalizedLabel = normalizeClassName(rawLabel);
+      const label = normalizedLabel.toLowerCase();
+      
       const confidence = Math.round(prediction.confidence * 100);
       
       const color = OBJECT_COLORS[label] || OBJECT_COLORS['default'];
@@ -258,7 +312,8 @@
       ctx.lineWidth = 3;
       ctx.strokeRect(x, y, width, height);
 
-      const labelText = `${prediction.class} ${confidence}%`;
+      // Use normalized name in label
+      const labelText = `${normalizedLabel} ${confidence}%`;
       ctx.font = 'bold 16px Arial';
       const textMetrics = ctx.measureText(labelText);
       const textHeight = 20;
@@ -354,105 +409,101 @@
   // ANNOUNCE DETECTIONS
   // ========================================
 
-// ========================================
-// ANNOUNCE DETECTIONS
-// ========================================
-
-function announceDetections(predictions) {
-  if (!predictions || predictions.length === 0) {
-    lastDetectedObjects.clear();
-    return;
-  }
-
-  const now = Date.now();
-  if (now - lastAnnouncement < 3000) {
-    // avoid spamming every frame
-    return;
-  }
-
-  // Collect unique classes from this frame
-  const currentObjects = new Set(
-    predictions.map(p => p.class.toLowerCase())
-  );
-
-  // Only announce if there's something new vs last frame
-  const hasNewObjects = Array.from(currentObjects).some(
-    obj => !lastDetectedObjects.has(obj)
-  );
-
-  if (!hasNewObjects && lastDetectedObjects.size > 0) {
-    return;
-  }
-
-  // Sort by priority (stairs > people > door > others)
-  const sortedObjects = Array.from(currentObjects).sort((a, b) => {
-    const priorityA = OBJECT_PRIORITY[a] || 0;
-    const priorityB = OBJECT_PRIORITY[b] || 0;
-    return priorityB - priorityA;
-  });
-
-  if (sortedObjects.length > 0) {
-    const objectToAnnounce = sortedObjects[0];
-    const count = predictions.filter(
-      p => p.class.toLowerCase() === objectToAnnounce
-    ).length;
-
-    let message = '';
-    let audioKey = 'generic';
-
-    if (objectToAnnounce.includes('stair')) {
-      message = window.t ? window.t('stairsWarning') : 'Warning! Stairs ahead';
-      audioKey = 'stairsWarning';
-      vibratePhone([200, 100, 200]);
-    } else if (objectToAnnounce.includes('people') || objectToAnnounce.includes('person')) {
-      if (count > 1) {
-        message = window.t
-          ? `${count} ${window.t('peopleDetected')}`
-          : `${count} people detected`;
-        audioKey = 'personMultiple';
-      } else {
-        message = window.t ? window.t('personDetected') : 'Person detected';
-        audioKey = 'personSingle';
-      }
-    } else if (objectToAnnounce.includes('door')) {
-      if (count > 1) {
-        message = window.t
-          ? `${count} ${window.t('doorsDetected')}`
-          : `${count} doors detected`;
-        audioKey = 'doorMultiple';
-      } else {
-        message = window.t ? window.t('doorAhead') : 'Door ahead';
-        audioKey = 'doorSingle';
-      }
-    } else {
-      message = window.t
-        ? `${objectToAnnounce} ${window.t('objectDetected')}`
-        : `${objectToAnnounce} detected`;
-      audioKey = 'generic';
+  function announceDetections(predictions) {
+    if (!predictions || predictions.length === 0) {
+      lastDetectedObjects.clear();
+      return;
     }
 
-    // 🔊 SMART AUDIO LOGIC
-    // Use recorded MP3 for Tagalog/Cebuano, TTS for English (with MP3 fallback)
-    const langCode = getCurrentLanguageCode(); // 'en', 'ta', or 'ce'
+    const now = Date.now();
+    if (now - lastAnnouncement < 3000) {
+      // avoid spamming every frame
+      return;
+    }
 
-    if (langCode === 'ta' || langCode === 'ce') {
-      // Tagalog or Cebuano → use only MP3 prompts
-      playAudioPrompt(audioKey);
-    } else {
-      // English → prefer TTS; if not available, fall back to MP3
-      if ('speechSynthesis' in window) {
-        speak(message);
+    // Collect unique classes from this frame (with normalization)
+    const currentObjects = new Set(
+      predictions.map(p => normalizeClassName(p.class).toLowerCase())
+    );
+
+    // Only announce if there's something new vs last frame
+    const hasNewObjects = Array.from(currentObjects).some(
+      obj => !lastDetectedObjects.has(obj)
+    );
+
+    if (!hasNewObjects && lastDetectedObjects.size > 0) {
+      return;
+    }
+
+    // Sort by priority (stairs > people > door > others)
+    const sortedObjects = Array.from(currentObjects).sort((a, b) => {
+      const priorityA = OBJECT_PRIORITY[a] || 0;
+      const priorityB = OBJECT_PRIORITY[b] || 0;
+      return priorityB - priorityA;
+    });
+
+    if (sortedObjects.length > 0) {
+      const objectToAnnounce = sortedObjects[0];
+      const count = predictions.filter(
+        p => normalizeClassName(p.class).toLowerCase() === objectToAnnounce
+      ).length;
+
+      let message = '';
+      let audioKey = 'generic';
+
+      if (objectToAnnounce.includes('stair')) {
+        message = window.t ? window.t('stairsWarning') : 'Warning! Stairs ahead';
+        audioKey = 'stairsWarning';
+        vibratePhone([200, 100, 200]);
+      } else if (objectToAnnounce.includes('people') || objectToAnnounce.includes('person')) {
+        if (count > 1) {
+          message = window.t
+            ? `${count} ${window.t('peopleDetected')}`
+            : `${count} people detected`;
+          audioKey = 'personMultiple';
+        } else {
+          message = window.t ? window.t('personDetected') : 'Person detected';
+          audioKey = 'personSingle';
+        }
+      } else if (objectToAnnounce.includes('door')) {
+        if (count > 1) {
+          message = window.t
+            ? `${count} ${window.t('doorsDetected')}`
+            : `${count} doors detected`;
+          audioKey = 'doorMultiple';
+        } else {
+          message = window.t ? window.t('doorAhead') : 'Door ahead';
+          audioKey = 'doorSingle';
+        }
       } else {
+        message = window.t
+          ? `${objectToAnnounce} ${window.t('objectDetected')}`
+          : `${objectToAnnounce} detected`;
+        audioKey = 'generic';
+      }
+
+      // 🔊 SMART AUDIO LOGIC
+      // Use recorded MP3 for Tagalog/Cebuano, TTS for English (with MP3 fallback)
+      const langCode = getCurrentLanguageCode(); // 'en', 'ta', or 'ce'
+
+      if (langCode === 'ta' || langCode === 'ce') {
+        // Tagalog or Cebuano → use only MP3 prompts
         playAudioPrompt(audioKey);
+      } else {
+        // English → prefer TTS; if not available, fall back to MP3
+        if ('speechSynthesis' in window) {
+          speak(message);
+        } else {
+          playAudioPrompt(audioKey);
+        }
       }
+
+      console.log('Announcement:', message, '(normalized from:', objectToAnnounce, ')');
+
+      lastAnnouncement = now;
+      lastDetectedObjects = currentObjects;
     }
-
-    console.log('Announcement:', message);
-
-    lastAnnouncement = now;
-    lastDetectedObjects = currentObjects;
   }
-}
 
   // ========================================
   // TEXT-TO-SPEECH
@@ -602,18 +653,22 @@ function announceDetections(predictions) {
   window.addEventListener('DOMContentLoaded', () => {
     console.log('Object Detection System Ready');
     console.log('Using Roboflow Hosted API');
-    console.log('Project: objdetection-dtu2z/trial-sjo4y/1');
+    console.log('Project: objdetection-jeqju/1 (with class name normalization)');
     console.log('Languages: English (EN), Tagalog (TL), Cebuano (CEB)');
     console.log('Current language:', window.currentLanguage || 'en');
+    console.log('Class name mapping active: Fixing corrupted Roboflow classes');
   });
 
   // ========================================
-  // EXPOSE FUNCTIONS
+  // EXPOSE FUNCTIONS (for voice-recognition.js)
   // ========================================
   window.objectDetection = {
     start: startDetection,
     stop: stopDetection,
     isActive: () => isDetecting
   };
+  
+  // Expose speak function for voice recognition
+  window.speak = speak;
 
 })();
