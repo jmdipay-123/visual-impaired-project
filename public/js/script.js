@@ -55,6 +55,29 @@
   let lastDetectedObjects = new Set();
 
   // ========================================
+  // LANGUAGE HELPERS (SINGLE SOURCE OF TRUTH)
+  // ========================================
+  
+  function getCurrentLanguageCode() {
+    // Read from window.currentLanguage (set by translations.js)
+    let lang = window.currentLanguage || document.documentElement.lang || 'en';
+    lang = String(lang).toLowerCase().trim();
+
+    // Tagalog: tl, ta, tagalog, fil
+    if (lang === 'tl' || lang === 'ta' || lang === 'tagalog' || lang.startsWith('fil')) {
+      return 'ta';
+    }
+
+    // Cebuano: ceb, ce, cebuano
+    if (lang === 'ceb' || lang === 'ce' || lang === 'cebuano') {
+      return 'ce';
+    }
+
+    // Default English
+    return 'en';
+  }
+
+  // ========================================
   // INITIALIZE ROBOFLOW
   // ========================================
   async function initializeRoboflow() {
@@ -258,7 +281,7 @@
     });
   }
 
-    // ========================================
+  // ========================================
   // AUDIO PROMPTS (USING /public/audio FOLDER)
   // ========================================
 
@@ -294,36 +317,13 @@
       ce: './audio/ce/door(ceb).mp3'
     },
 
-    // fallback for unknown objects – reuse "person" voice
+    // fallback for unknown objects
     generic: {
       en: './audio/en/person.mp3',
       ta: './audio/ta/tao.mp3',
       ce: './audio/ce/person(ceb).mp3'
     }
   };
-
-  function getCurrentLanguageCode() {
-    let lang =
-      window.currentLanguage ||
-      window.appLanguage ||
-      document.documentElement.lang ||
-      'en';
-
-    lang = String(lang).toLowerCase();
-
-    // Tagalog
-    if (lang === 'ta' || lang.startsWith('tl') || lang === 'tagalog' || lang.startsWith('fil')) {
-      return 'ta';
-    }
-
-    // Cebuano
-    if (lang === 'ce' || lang.startsWith('ceb') || lang === 'cebuano') {
-      return 'ce';
-    }
-
-    // Default English
-    return 'en';
-  }
 
   // Reusable audio element
   const announcementAudio = new Audio();
@@ -434,71 +434,9 @@
     }
   }
 
-    // Current language used by the object-detection audio
-  let detectionLanguage = 'en';
-
-  function normalizeLanguageCode(lang) {
-    if (!lang) return 'en';
-    lang = String(lang).toLowerCase().trim();
-
-    // Handle the codes you’re actually using: EN, TL, CEB, etc.
-    if (lang === 'en' || lang === 'english' || lang.startsWith('en-')) {
-      return 'en';
-    }
-
-    // Tagalog: EN/TL/TA/TAGALOG/FIL…
-    if (
-      lang === 'ta' ||
-      lang === 'tl' ||
-      lang === 'tagalog' ||
-      lang.startsWith('tl') ||
-      lang.startsWith('fil')
-    ) {
-      return 'ta'; // use /audio/ta/...
-    }
-
-    // Cebuano: CE/CEB/CEBU/CEBUANO…
-    if (
-      lang === 'ce' ||
-      lang === 'ceb' ||
-      lang === 'cebu' ||
-      lang === 'cebuano' ||
-      lang.startsWith('ceb')
-    ) {
-      return 'ce'; // use /audio/ce/...
-    }
-
-    // Default
-    return 'en';
-  }
-
-  function setDetectionLanguage(lang) {
-    detectionLanguage = normalizeLanguageCode(lang);
-    console.log('Detection language set to:', detectionLanguage);
-  }
-
   // ========================================
   // TEXT-TO-SPEECH
   // ========================================
-
-  // Helper: detect current UI language
-function getCurrentLanguageCode() {
-  // Read the current language that translations.js / index.html is using
-  let lang =
-    (window.currentLanguage || document.documentElement.lang || 'en')
-      .toLowerCase()
-      .trim();
-
-  if (lang === 'tl' || lang === 'tagalog' || lang.startsWith('fil')) {
-    return 'ta'; // use /audio/ta/...
-  }
-  if (lang === 'ceb' || lang === 'ce' || lang === 'cebuano') {
-    return 'ce'; // use /audio/ce/...
-  }
-
-  return 'en'; // default English
-}
-
 
   // Helper: pick an appropriate voice for the language
   function pickVoiceForLanguage(langCode) {
@@ -507,8 +445,8 @@ function getCurrentLanguageCode() {
 
     const prefsByLang = {
       en: ['en-PH', 'en-US', 'en-GB'],
-      tl: ['fil-PH', 'tl-PH', 'en-PH'],
-      ceb: ['ceb', 'fil-PH', 'tl-PH', 'en-PH']
+      ta: ['fil-PH', 'tl-PH', 'en-PH'],
+      ce: ['ceb', 'fil-PH', 'tl-PH', 'en-PH']
     };
 
     const prefs = prefsByLang[langCode] || prefsByLang.en;
@@ -541,9 +479,9 @@ function getCurrentLanguageCode() {
     utterance.volume = 1.0;
 
     // Choose language code for the utterance
-    if (langCode === 'tl') {
+    if (langCode === 'ta') {
       utterance.lang = 'fil-PH'; // Tagalog / Filipino
-    } else if (langCode === 'ceb') {
+    } else if (langCode === 'ce') {
       // Many browsers don't have a Cebuano voice; use Filipino if not available
       utterance.lang = 'fil-PH';
     } else {
@@ -559,7 +497,6 @@ function getCurrentLanguageCode() {
     window.speechSynthesis.speak(utterance);
     console.log(`Announced [${utterance.lang}]:`, text);
   }
-
 
   // ========================================
   // VIBRATION
@@ -615,6 +552,12 @@ function getCurrentLanguageCode() {
     stopDetection();
   });
 
+  // Listen for language changes from translations.js
+  document.addEventListener('languageChanged', (event) => {
+    const newLang = event.detail.language;
+    console.log('Detection language updated to:', newLang);
+  });
+
   videoPreview.addEventListener('loadedmetadata', () => {
     setupCanvas();
   });
@@ -641,6 +584,7 @@ function getCurrentLanguageCode() {
     console.log('Using Roboflow Hosted API');
     console.log('Project: objdetection-dtu2z/trial-sjo4y/1');
     console.log('Languages: English (EN), Tagalog (TL), Cebuano (CEB)');
+    console.log('Current language:', window.currentLanguage || 'en');
   });
 
   // ========================================
@@ -649,9 +593,7 @@ function getCurrentLanguageCode() {
   window.objectDetection = {
     start: startDetection,
     stop: stopDetection,
-    isActive: () => isDetecting,
-    setLanguage: setDetectionLanguage   // 👈 new
+    isActive: () => isDetecting
   };
-
 
 })();

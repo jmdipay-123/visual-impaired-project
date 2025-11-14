@@ -139,8 +139,19 @@ const translations = {
   }
 };
 
-// Current language state
+// ========================================
+// INITIALIZE LANGUAGE IMMEDIATELY
+// ========================================
+// Read from localStorage and set globally BEFORE DOMContentLoaded
 let currentLanguage = localStorage.getItem('language') || 'en';
+
+// Set window.currentLanguage immediately so script.js can use it
+window.currentLanguage = currentLanguage;
+
+// Set HTML lang attribute immediately
+if (document.documentElement) {
+  document.documentElement.lang = currentLanguage;
+}
 
 // Get translation
 function t(key) {
@@ -222,17 +233,18 @@ function updateButtonText(selector, iconClass, text) {
 // Change language
 function changeLanguage(lang) {
   if (translations[lang]) {
-
+    // Update all language references at once
+    currentLanguage = lang;
     window.currentLanguage = lang;
     document.documentElement.lang = lang;
-    currentLanguage = lang;
+    
+    // Save to localStorage (single key: 'language')
     localStorage.setItem('language', lang);
+    
+    // Update all page text
     updatePageLanguage();
     
-    // Update HTML lang attribute
-    document.documentElement.lang = lang;
-    
-    // Dispatch event for other scripts
+    // Dispatch event for other scripts (like script.js audio)
     document.dispatchEvent(new CustomEvent('languageChanged', { 
       detail: { language: lang } 
     }));
@@ -243,16 +255,26 @@ function changeLanguage(lang) {
     });
     const activeBtn = document.querySelector(`[data-lang="${lang}"]`);
     if (activeBtn) activeBtn.classList.add('active');
+    
+    console.log('Language changed to:', lang);
   }
 }
 
 // Initialize language on page load
 document.addEventListener('DOMContentLoaded', () => {
+  // Apply translations to page
   updatePageLanguage();
   
-  // Set active language button
+  // Set active language button based on current language
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
   const activeBtn = document.querySelector(`[data-lang="${currentLanguage}"]`);
-  if (activeBtn) activeBtn.classList.add('active');
+  if (activeBtn) {
+    activeBtn.classList.add('active');
+  }
+  
+  console.log('Language system initialized:', currentLanguage);
 });
 
 // Export for use in other scripts
