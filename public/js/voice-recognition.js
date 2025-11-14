@@ -271,9 +271,19 @@
   // START/STOP LISTENING
   // ========================================
   
-  function startListening() {
+  async function startListening() {
     if (!isSupported) {
       showVoiceMessage('Voice recognition not supported', 'error');
+      return false;
+    }
+    
+    // Request microphone permission explicitly (especially for mobile)
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('Microphone permission granted');
+    } catch (error) {
+      console.error('Microphone permission denied:', error);
+      showVoiceMessage('Please allow microphone access', 'error');
       return false;
     }
     
@@ -291,6 +301,7 @@
       return true;
     } catch (error) {
       console.error('Error starting recognition:', error);
+      showVoiceMessage('Could not start voice recognition', 'error');
       return false;
     }
   }
