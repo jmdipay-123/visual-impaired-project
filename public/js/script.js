@@ -265,40 +265,40 @@
   const AUDIO_PROMPTS = {
     // stairs / hagdan
     stairsWarning: {
-      en: '/audio/en/stairs.mp3',
-      ta: '/audio/ta/hagdan.mp3',
-      ce: '/audio/ce/stairs(ceb).mp3'
+      en: './audio/en/stairs.mp3',
+      ta: './audio/ta/hagdan.mp3',
+      ce: './audio/ce/stairs(ceb).mp3'
     },
 
     // person / tao
     personSingle: {
-      en: '/audio/en/person.mp3',
-      ta: '/audio/ta/tao.mp3',
-      ce: '/audio/ce/person(ceb).mp3'
+      en: './audio/en/person.mp3',
+      ta: './audio/ta/tao.mp3',
+      ce: './audio/ce/person(ceb).mp3'
     },
     personMultiple: {
-      en: '/audio/en/person.mp3',
-      ta: '/audio/ta/tao.mp3',
-      ce: '/audio/ce/person(ceb).mp3'
+      en: './audio/en/person.mp3',
+      ta: './audio/ta/tao.mp3',
+      ce: './audio/ce/person(ceb).mp3'
     },
 
     // door / pinto
     doorSingle: {
-      en: '/audio/en/door.mp3',
-      ta: '/audio/ta/pinto.mp3',
-      ce: '/audio/ce/door(ceb).mp3'
+      en: './audio/en/door.mp3',
+      ta: './audio/ta/pinto.mp3',
+      ce: './audio/ce/door(ceb).mp3'
     },
     doorMultiple: {
-      en: '/audio/en/door.mp3',
-      ta: '/audio/ta/pinto.mp3',
-      ce: '/audio/ce/door(ceb).mp3'
+      en: './audio/en/door.mp3',
+      ta: './audio/ta/pinto.mp3',
+      ce: './audio/ce/door(ceb).mp3'
     },
 
     // fallback for unknown objects – reuse "person" voice
     generic: {
-      en: '/audio/en/person.mp3',
-      ta: '/audio/ta/tao.mp3',
-      ce: '/audio/ce/person(ceb).mp3'
+      en: './audio/en/person.mp3',
+      ta: './audio/ta/tao.mp3',
+      ce: './audio/ce/person(ceb).mp3'
     }
   };
 
@@ -353,9 +353,7 @@
   // ========================================
   // ANNOUNCE DETECTIONS
   // ========================================
-    // ========================================
-  // ANNOUNCE DETECTIONS
-  // ========================================
+
   function announceDetections(predictions) {
     if (!predictions || predictions.length === 0) {
       lastDetectedObjects.clear();
