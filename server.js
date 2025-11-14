@@ -7,6 +7,7 @@ import multer from "multer";
 import cors from "cors";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
+import { Server as SocketIOServer } from "socket.io"; 
 
 dotenv.config();
  
@@ -37,6 +38,45 @@ if (
   server = http.createServer(app);
   console.log("✅ HTTP enabled for production");
 }
+
+// Socket.IO setup (dito lang tayo magdadagdag)
+const io = new SocketIOServer(server, {
+  cors: {
+    origin: "*", // pwede mong i-restrict later kung gusto mo
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log("🔌 Socket connected:", socket.id);
+
+  // Phone registers itself
+  socket.on("registerDevice", ({ deviceId }) => {
+    if (!deviceId) return;
+    console.log("📱 Device registered:", deviceId);
+    socket.join(`device:${deviceId}`);
+  });
+
+    // 🔹 Preview frames: phone → controllers
+  socket.on("previewFrame", (data) => {
+    const { deviceId, image } = data || {};
+    if (!deviceId || !image) return;
+
+    // ipadala sa ibang clients (controllers), huwag sa sender
+    socket.broadcast.emit("previewFrame", { deviceId, image });
+  });
+
+
+  // Controller sends a command to device
+  socket.on("sendCommand", ({ deviceId, command }) => {
+    if (!deviceId || !command) return;
+    console.log("📨 Command to", deviceId, command);
+    io.to(`device:${deviceId}`).emit("command", command);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("❌ Socket disconnected:", socket.id);
+  });
+});
  
 // Middlewares
 app.use(cors());
