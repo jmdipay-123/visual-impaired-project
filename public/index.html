@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <meta name="description" content="Enhancing Object Recognition and Navigation for Visually Impaired Persons using deep-learning technology">
+  <title>Home | Object Recognition and Navigation for Visually Impaired Person</title>
+  <link rel="stylesheet" href="./css/styles.css" />
+  <link rel="stylesheet" href="./css/mobile.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <button class="menu-toggle" aria-label="Toggle navigation menu">
+        <i class="fas fa-bars"></i>
+      </button>
+      <a style="color: #fff; text-decoration: none;" href="/">
+        <h1>
+          <i class="fa-solid fa-magnifying-glass"></i> 
+          Object Recognition and Navigation
+        </h1>
+      </a>
+      <nav>
+        <ul id="navMenu">
+          <li><a href="./index.html">Home</a></li>
+          <li><a href="./information.html">Object Information</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- HERO SECTION -->
+    <section id="home" class="hero-section">
+      <h2>Enhancing Object Recognition and Navigation for Visually Impaired Persons</h2>
+      <p>Integrating deep-learning object detection to deliver real-time guidance and obstacle alerts for visually impaired users.</p>
+      <div class="feature-grid">
+        <div class="feature-card" data-target="detect" role="button" tabindex="0">
+          <i class="fas fa-camera" aria-hidden="true"></i>
+          <h3>Real-time Detection</h3>
+          <p>Use your device camera to start detecting objects in real-time with advanced AI technology.</p>
+        </div>
+        <div class="feature-card" data-target="information" role="button" tabindex="0">
+          <i class="fas fa-lightbulb" aria-hidden="true"></i>
+          <h3>Object Information</h3>
+          <p>Learn more about Object Recognition and Navigation technology and their impact on accessibility.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- DETECTION SECTION -->
+    <section id="detect" class="detection-section">
+      <h2>Detect Object</h2>
+      
+      <!-- Camera Controls -->
+      <div class="camera-controls">
+        <button id="useCameraBtn" class="btn primary-btn">
+          <i class="fas fa-video"></i>
+          Use Camera
+        </button>
+        <button id="stopCameraBtn" class="btn secondary-btn" style="display: none;">
+          <i class="fas fa-stop"></i>
+          Stop Camera
+        </button>
+      </div>
+      
+      <!-- DETECTION LAYOUT -->
+      <div class="detect-layout">
+        <!-- PREVIEW CONTAINER -->
+        <div class="detect-box">
+          <h3 class="box-title">Preview</h3>
+          <div class="image-preview-container">
+            <!-- Loading Spinner -->
+            <div id="loadingSpinner" class="spinner-container" style="display: none;">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" aria-label="Loading">
+                <linearGradient id="a12">
+                  <stop offset="0" stop-color="#FF7A00" stop-opacity="0"></stop>
+                  <stop offset="1" stop-color="#FF7A00"></stop>
+                </linearGradient>
+                <circle fill="none" stroke="url(#a12)" stroke-width="15" stroke-linecap="round" 
+                  stroke-dasharray="0 44 0 44 0 44 0 44 0 360" cx="100" cy="100" r="70" 
+                  transform-origin="center">
+                  <animateTransform type="rotate" attributeName="transform" calcMode="discrete" 
+                    dur="2" values="360;324;288;252;216;180;144;108;72;36" repeatCount="indefinite">
+                  </animateTransform>
+                </circle>
+              </svg>
+              <p>Analyzing...</p>
+            </div>
+            
+            <!-- Video Preview -->
+            <video id="videoPreview" autoplay playsinline style="display:none"></video>
+            
+            <!-- Placeholder Text -->
+            <p id="previewPlaceholder">Click "Use Camera" to start detection</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 Enhancing Object Recognition. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- Image Modal -->
+  <div id="imageModal" class="modal" role="dialog" aria-modal="true" aria-label="Full size image preview">
+    <img id="modalImg" src="" alt="Full size preview">
+  </div>
+
+  <!-- Application Scripts -->
+  <script src="./js/burger.js"></script>
+  <script src="./js/camera.js"></script>
+  <script src="./js/script.js"></script>
+</body>
+</html>

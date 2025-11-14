@@ -1,0 +1,707 @@
+/* ============================================
+   MOBILE OPTIMIZATIONS
+   Mobile-first responsive design
+   ============================================ */
+
+/* TABLETS AND SMALLER (max-width: 1024px) */
+@media (max-width: 1024px) {
+  .hero-section h2 {
+    font-size: 2.3rem;
+  }
+  
+  .hero-section > p {
+    font-size: 1.15rem;
+  }
+
+  .feature-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+  }
+
+  .detection-section {
+    padding: 50px 20px;
+  }
+}
+
+/* TABLETS (max-width: 768px) */
+@media (max-width: 768px) {
+  /* Header & Navigation */
+  .menu-toggle {
+    display: block;
+    order: -1;
+  }
+
+  header .container {
+    flex-wrap: wrap;
+    padding: 0 15px;
+  }
+
+  header h1 {
+    font-size: 1.3rem;
+    order: 0;
+  }
+
+  nav {
+    width: 100%;
+    order: 3;
+  }
+
+  nav ul {
+    flex-direction: column;
+    align-items: stretch;
+    display: none;
+    width: 100%;
+    margin-top: 15px;
+    gap: 0;
+    background: linear-gradient(135deg, rgba(26, 26, 26, 0.98) 0%, rgba(0, 0, 0, 0.98) 100%);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 122, 0, 0.2);
+  }
+
+  nav ul.show {
+    display: flex;
+    animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-15px);
+      max-height: 0;
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+      max-height: 500px;
+    }
+  }
+
+  nav ul li {
+    margin: 0;
+    width: 100%;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    transition: background-color 0.2s ease;
+  }
+
+  nav ul li:last-child {
+    border-bottom: none;
+  }
+
+  nav ul li:hover {
+    background-color: rgba(255, 122, 0, 0.08);
+  }
+
+  nav ul li a {
+    display: block;
+    width: 100%;
+    padding: 16px 20px;
+    border-radius: 0;
+    text-align: left;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+
+  nav ul li a::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 60%;
+    background: var(--primary-color);
+    transition: width 0.3s ease;
+    border-radius: 0 4px 4px 0;
+  }
+
+  nav ul li a:hover {
+    background-color: rgba(255, 122, 0, 0.15);
+    padding-left: 28px;
+  }
+
+  nav ul li a:hover::before {
+    width: 4px;
+  }
+
+  /* Hero Section */
+  .hero-section {
+    padding: 60px 20px;
+    margin: 30px 0;
+    border-radius: 16px;
+  }
+
+  .hero-section h2 {
+    font-size: 2rem;
+    margin-bottom: 18px;
+  }
+
+  .hero-section > p {
+    font-size: 1.1rem;
+    margin-bottom: 40px;
+  }
+
+  /* Feature Grid */
+  .feature-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 0 10px;
+    margin-top: 40px;
+  }
+
+  .feature-card {
+    padding: 35px 25px;
+    min-height: 280px;
+  }
+
+  .feature-card .fas {
+    font-size: 3.2em;
+  }
+
+  .feature-card h3 {
+    font-size: 1.4em;
+  }
+
+  .feature-card p {
+    font-size: 1.02em;
+  }
+
+  /* Detection Section */
+  .detection-section {
+    padding: 40px 15px;
+    margin: 30px 0;
+  }
+
+  .detection-section h2 {
+    font-size: 2rem;
+    margin-bottom: 40px;
+  }
+
+  /* Camera Controls */
+  .camera-controls {
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 25px;
+    padding: 0 10px;
+  }
+
+  .camera-controls .btn {
+    width: 100%;
+    min-width: auto;
+    max-width: 400px;
+  }
+
+  /* Detection Layout */
+  .detect-layout {
+    grid-template-columns: 1fr;
+    gap: 25px;
+    margin-top: 25px;
+  }
+
+  .detect-box {
+    padding: 25px;
+  }
+
+  .box-title {
+    font-size: 1.5em;
+    margin-bottom: 20px;
+  }
+
+  /* Image Preview */
+  .image-preview-container {
+    min-height: 350px;
+    border-width: 2px;
+  }
+
+  /* Upload Area */
+  .upload-area {
+    padding: 30px 20px;
+    margin-bottom: 30px;
+  }
+
+  .upload-area p {
+    font-size: 1.08rem;
+  }
+
+  .upload-area .btn {
+    width: 100%;
+    margin: 8px 0;
+  }
+
+  /* Buttons */
+  .btn {
+    padding: 13px 24px;
+    font-size: 1rem;
+  }
+
+  /* Capture Button */
+  #captureBtn {
+    width: 65px;
+    height: 65px;
+    bottom: 20px;
+  }
+
+  #captureBtn i {
+    font-size: 1.5em;
+  }
+
+  /* Footer */
+  footer {
+    padding: 30px 0;
+    margin-top: 50px;
+  }
+}
+
+/* MOBILE DEVICES (max-width: 480px) */
+@media (max-width: 480px) {
+  /* Container */
+  .container {
+    padding: 0 15px;
+  }
+
+  /* Header */
+  header {
+    padding: 0.8rem 0;
+  }
+
+  header .container {
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  header h1 {
+    font-size: 1rem;
+    line-height: 1.4;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    flex: 1;
+  }
+
+  header h1 i {
+    font-size: 0.85em;
+    margin-right: 6px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .menu-toggle {
+    font-size: 1.3rem;
+    padding: 8px 10px;
+    margin: 0;
+    border-radius: 6px;
+    transition: background-color 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .menu-toggle:active {
+    background-color: rgba(255, 122, 0, 0.2);
+  }
+
+  /* Hero Section */
+  .hero-section {
+    padding: 35px 15px 40px;
+    margin: 15px 0;
+    border-radius: 12px;
+  }
+
+  .hero-section::before {
+    display: none;
+  }
+
+  .hero-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+    line-height: 1.25;
+    padding: 0 5px;
+  }
+
+  .hero-section > p {
+    font-size: 0.95rem;
+    margin-bottom: 30px;
+    line-height: 1.6;
+    padding: 0 5px;
+  }
+
+  /* Feature Grid */
+  .feature-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+    padding: 0;
+    margin-top: 30px;
+  }
+
+  .feature-card {
+    padding: 25px 20px;
+    min-height: auto;
+    border-radius: 12px;
+    width: 100%;
+  }
+
+  .feature-card .fas {
+    font-size: 2.5em;
+    margin-bottom: 15px;
+  }
+
+  .feature-card h3 {
+    font-size: 1.2em;
+    margin-bottom: 10px;
+  }
+
+  .feature-card p {
+    font-size: 0.95em;
+    line-height: 1.5;
+  }
+
+  /* Detection Section */
+  .detection-section {
+    padding: 30px 10px;
+    margin: 25px 0;
+  }
+
+  .detection-section h2 {
+    font-size: 1.6rem;
+    margin-bottom: 35px;
+  }
+
+  .detection-section h2::after {
+    width: 80px;
+    height: 3px;
+  }
+
+  /* Camera Controls */
+  .camera-controls {
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 0 5px;
+  }
+
+  .camera-controls .btn {
+    font-size: 0.95rem;
+    padding: 12px 20px;
+  }
+
+  /* Detection Layout */
+  .detect-layout {
+    gap: 20px;
+    margin-top: 20px;
+  }
+
+  .detect-box {
+    padding: 20px;
+    border-radius: 12px;
+    border-width: 1.5px;
+  }
+
+  .box-title {
+    font-size: 1.35em;
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+  }
+
+  .box-title::after {
+    width: 50px;
+  }
+
+  /* Image Preview */
+  .image-preview-container {
+    min-height: 280px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+  }
+
+  #previewPlaceholder {
+    font-size: 1.1rem;
+    padding: 0 15px;
+  }
+
+  /* Upload Area */
+  .upload-area {
+    padding: 25px 15px;
+    border-radius: 12px;
+    border-width: 2px;
+    margin-bottom: 25px;
+  }
+
+  .upload-area p {
+    font-size: 1rem;
+    margin-bottom: 20px;
+  }
+
+  .upload-area input[type="file"] {
+    padding: 10px;
+    max-width: 100%;
+    font-size: 0.9rem;
+  }
+
+  /* Results Area */
+  .results-area {
+    padding: 20px;
+    border-radius: 10px;
+  }
+
+  .result-item {
+    font-size: 1em;
+    padding: 12px;
+    margin-bottom: 12px;
+    border-left-width: 3px;
+  }
+
+  .result-description,
+  .prescription-mitigation {
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+  }
+
+  .result-description h4,
+  .prescription-mitigation h4 {
+    font-size: 1.15em;
+    margin: 15px 0 10px 0;
+  }
+
+  .result-description p,
+  .prescription-mitigation ul li {
+    font-size: 0.95em;
+    line-height: 1.6;
+  }
+
+  .prescription-mitigation ul {
+    margin: 0 0 12px 20px;
+  }
+
+  /* Buttons */
+  .btn {
+    padding: 12px 22px;
+    font-size: 0.95rem;
+    border-radius: 8px;
+  }
+
+  .success-btn,
+  .share-btn {
+    font-size: 1rem;
+  }
+
+  /* Capture Button */
+  #captureBtn {
+    width: 55px;
+    height: 55px;
+    bottom: 15px;
+    border-width: 4px;
+  }
+
+  #captureBtn i {
+    font-size: 1.4em;
+  }
+
+  /* Spinner */
+  .spinner-container svg {
+    width: 70px;
+    height: 70px;
+  }
+
+  .spinner-container p {
+    font-size: 1.05rem;
+  }
+
+  /* Modal */
+  .modal img {
+    max-width: 95%;
+    max-height: 95%;
+  }
+
+  /* Footer */
+  footer {
+    padding: 25px 0;
+    margin-top: 40px;
+    border-top-width: 3px;
+  }
+
+  footer p {
+    font-size: 0.9rem;
+    padding: 0 15px;
+  }
+}
+
+/* EXTRA SMALL DEVICES (max-width: 360px) */
+@media (max-width: 360px) {
+  header h1 {
+    font-size: 1rem;
+  }
+
+  .hero-section {
+    padding: 30px 12px;
+  }
+
+  .hero-section h2 {
+    font-size: 1.4rem;
+  }
+
+  .hero-section > p {
+    font-size: 0.92rem;
+  }
+
+  .feature-card {
+    padding: 25px 15px;
+  }
+
+  .feature-card .fas {
+    font-size: 2.5em;
+  }
+
+  .feature-card h3 {
+    font-size: 1.2em;
+  }
+
+  .detection-section h2 {
+    font-size: 1.4rem;
+  }
+
+  .detect-box {
+    padding: 15px;
+  }
+
+  .box-title {
+    font-size: 1.25em;
+  }
+
+  .image-preview-container {
+    min-height: 250px;
+  }
+
+  #captureBtn {
+    width: 50px;
+    height: 50px;
+    bottom: 12px;
+  }
+
+  #captureBtn i {
+    font-size: 1.3em;
+  }
+
+  .btn {
+    padding: 10px 18px;
+    font-size: 0.9rem;
+  }
+}
+
+/* LANDSCAPE ORIENTATION OPTIMIZATION */
+@media (max-height: 600px) and (orientation: landscape) {
+  .hero-section {
+    padding: 40px 20px;
+  }
+
+  .hero-section h2 {
+    font-size: 1.8rem;
+  }
+
+  .hero-section > p {
+    font-size: 1rem;
+    margin-bottom: 30px;
+  }
+
+  .feature-grid {
+    margin-top: 30px;
+  }
+
+  .feature-card {
+    min-height: auto;
+    padding: 25px 20px;
+  }
+
+  .image-preview-container {
+    min-height: 250px;
+  }
+
+  .detection-section {
+    padding: 30px 15px;
+  }
+}
+
+/* TOUCH DEVICE OPTIMIZATIONS */
+@media (hover: none) and (pointer: coarse) {
+  /* Increase touch target sizes */
+  .btn {
+    min-height: 44px;
+    padding: 14px 26px;
+  }
+
+  nav ul li a {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+  }
+
+  .feature-card {
+    padding: 35px 25px;
+  }
+
+  #captureBtn {
+    min-width: 60px;
+    min-height: 60px;
+  }
+
+  /* Remove hover effects on touch devices */
+  .feature-card:hover {
+    transform: none;
+  }
+
+  .detect-box:hover {
+    transform: none;
+  }
+
+  .btn:hover {
+    transform: none;
+  }
+
+  /* Add active states for touch */
+  .feature-card:active {
+    transform: scale(0.98);
+  }
+
+  .btn:active {
+    transform: scale(0.96);
+  }
+
+  #captureBtn:active {
+    transform: scale(0.9);
+  }
+}
+
+/* ACCESSIBILITY IMPROVEMENTS FOR MOBILE */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* HIGH CONTRAST MODE SUPPORT */
+@media (prefers-contrast: high) {
+  .feature-card,
+  .detect-box {
+    border-width: 2px;
+  }
+
+  .btn {
+    border: 2px solid currentColor;
+  }
+
+  .box-title::after,
+  .detection-section h2::after {
+    height: 4px;
+  }
+}
