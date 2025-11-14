@@ -6,8 +6,8 @@
   // ROBOFLOW CONFIGURATION
   // ========================================
   const ROBOFLOW_CONFIG = {
-    apiKey: 'MvAPSE6lMWD1bxEBRpJZ',
-    modelId: 'trial-sjo4y',
+    apiKey: 'qjiHA3BXwtmd66jycXB8',
+    modelId: 'objdetection-jeqju',
     version: '1',
     confidenceThreshold: 40,
     fps: 4,
