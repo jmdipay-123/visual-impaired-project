@@ -257,6 +257,7 @@
       z-index: 9999;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       animation: slideDown 0.3s ease;
+      display: none;
     `;
     
     document.body.appendChild(msgDiv);
