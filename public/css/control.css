@@ -1,4 +1,4 @@
-:root {
+ :root {
       --primary-color: #FF7A00;
       --secondary-color: #FFB84D;
       --text-color: #222;
@@ -135,6 +135,11 @@
       border-color: var(--primary-color);
     }
 
+    .control-card.locked {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
     .card-title {
       font-size: 1.3rem;
       color: var(--text-color);
@@ -150,6 +155,65 @@
     .card-title i {
       color: var(--primary-color);
       font-size: 1.1em;
+    }
+
+    /* PAIRING SECTION */
+    .pairing-input-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .pairing-input {
+      flex: 1;
+      padding: 12px;
+      font-size: 1rem;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.3s ease;
+    }
+
+    .pairing-input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(255, 122, 0, 0.1);
+    }
+
+    .pairing-input::placeholder {
+      text-transform: none;
+      letter-spacing: normal;
+      font-weight: normal;
+    }
+
+    .pairing-status {
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    .pairing-status.waiting {
+      background: rgba(255, 193, 7, 0.1);
+      color: #F57C00;
+      border: 2px solid rgba(255, 193, 7, 0.3);
+    }
+
+    .pairing-status.paired {
+      background: rgba(76, 175, 80, 0.1);
+      color: #4CAF50;
+      border: 2px solid rgba(76, 175, 80, 0.3);
+    }
+
+    .pairing-status.error {
+      background: rgba(244, 67, 54, 0.1);
+      color: #f44336;
+      border: 2px solid rgba(244, 67, 54, 0.3);
     }
 
     /* BUTTONS */
@@ -236,30 +300,6 @@
       outline: none;
       border-color: var(--primary-color);
       box-shadow: 0 0 0 3px rgba(255, 122, 0, 0.1);
-    }
-
-    /* DEVICE INFO */
-    .device-info {
-      background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-      padding: 15px;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      margin-top: 15px;
-    }
-
-    .device-info strong {
-      display: block;
-      color: var(--text-color);
-      margin-bottom: 5px;
-    }
-
-    .device-info code {
-      background: white;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-family: 'Courier New', monospace;
-      color: var(--primary-color);
-      font-weight: 600;
     }
 
     /* PREVIEW SECTION */

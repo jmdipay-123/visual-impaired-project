@@ -6,7 +6,7 @@
   <title>Visual Impaired Cane - Remote Controller</title>
   <script src="/socket.io/socket.io.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="../css/control.css">
+
 </head>
 <body>
   <!-- HEADER -->
@@ -27,38 +27,58 @@
   <div class="dashboard">
     <!-- SIDEBAR CONTROLS -->
     <aside class="sidebar">
-      <!-- LANGUAGE CONTROL -->
+      <!-- PAIRING CONTROL -->
       <div class="control-card">
+        <div class="card-title">
+          <i class="fas fa-lock"></i>
+          Device Pairing
+        </div>
+        <div class="pairing-input-group">
+          <input 
+            type="text" 
+            id="pairingCodeInput" 
+            class="pairing-input" 
+            placeholder="CANE-XXXXXX"
+            maxlength="11"
+          >
+          <button id="pairBtn" class="btn btn-primary" style="width: auto; padding: 12px 20px;">
+            <i class="fas fa-link"></i>
+            Pair
+          </button>
+        </div>
+        <div id="pairingStatus" class="pairing-status waiting">
+          <i class="fas fa-info-circle"></i> Enter pairing code from device
+        </div>
+      </div>
+
+      <!-- LANGUAGE CONTROL -->
+      <div class="control-card locked" id="languageCard">
         <div class="card-title">
           <i class="fas fa-language"></i>
           Language Control
         </div>
-        <select id="lang" class="language-select">
+        <select id="lang" class="language-select" disabled>
           <option value="en">🇬🇧 English</option>
           <option value="tl">🇵🇭 Tagalog</option>
           <option value="ceb">🇵🇭 Cebuano</option>
         </select>
-        <button id="applyLangBtn" class="btn btn-primary">
+        <button id="applyLangBtn" class="btn btn-primary" disabled>
           <i class="fas fa-check"></i>
           Apply Language
         </button>
-        <div class="device-info">
-          <strong>Target Device:</strong>
-          <code>vision-device-1</code>
-        </div>
       </div>
 
       <!-- CAMERA CONTROL -->
-      <div class="control-card">
+      <div class="control-card locked" id="cameraCard">
         <div class="card-title">
           <i class="fas fa-camera"></i>
           Camera Control
         </div>
-        <button id="startCamBtn" class="btn btn-primary">
+        <button id="startCamBtn" class="btn btn-primary" disabled>
           <i class="fas fa-play"></i>
           Start Camera
         </button>
-        <button id="stopCamBtn" class="btn btn-danger">
+        <button id="stopCamBtn" class="btn btn-danger" disabled>
           <i class="fas fa-stop"></i>
           Stop Camera
         </button>
@@ -77,7 +97,7 @@
           <div class="preview-placeholder" id="previewPlaceholder">
             <i class="fas fa-camera"></i>
             <h3>No Preview Available</h3>
-            <p>Start the camera to see live feed</p>
+            <p>Pair device and start camera to see live feed</p>
           </div>
           <img id="previewImage" alt="Camera preview" style="display: none;">
         </div>
@@ -102,12 +122,17 @@
   <!-- JAVASCRIPT -->
   <script>
     const targetDeviceId = "vision-device-1";
+    let currentPairingCode = null;
+    let isPaired = false;
+
     const logEl = document.getElementById("log");
     const previewImage = document.getElementById("previewImage");
     const previewPlaceholder = document.getElementById("previewPlaceholder");
     const connectionBadge = document.getElementById("connectionBadge");
     const connectionText = document.getElementById("connectionText");
     const statusDot = document.getElementById("statusDot");
+    const pairingStatus = document.getElementById("pairingStatus");
+    const pairingInput = document.getElementById("pairingCodeInput");
 
     function log(...args) {
       const timestamp = new Date().toLocaleTimeString();
@@ -131,6 +156,31 @@
       }
     }
 
+    function updatePairingStatus(status, message) {
+      pairingStatus.className = `pairing-status ${status}`;
+      pairingStatus.innerHTML = message;
+
+      if (status === "paired") {
+        isPaired = true;
+        // Unlock controls
+        document.getElementById("languageCard").classList.remove("locked");
+        document.getElementById("cameraCard").classList.remove("locked");
+        document.getElementById("lang").disabled = false;
+        document.getElementById("applyLangBtn").disabled = false;
+        document.getElementById("startCamBtn").disabled = false;
+        document.getElementById("stopCamBtn").disabled = false;
+      } else {
+        isPaired = false;
+        // Lock controls
+        document.getElementById("languageCard").classList.add("locked");
+        document.getElementById("cameraCard").classList.add("locked");
+        document.getElementById("lang").disabled = true;
+        document.getElementById("applyLangBtn").disabled = true;
+        document.getElementById("startCamBtn").disabled = true;
+        document.getElementById("stopCamBtn").disabled = true;
+      }
+    }
+
     // Socket.IO connection
     const socket = io({
       transports: ["websocket", "polling"],
@@ -144,6 +194,7 @@
     socket.on("disconnect", (reason) => {
       log("❌ Disconnected:", reason);
       updateConnectionStatus(false);
+      updatePairingStatus("error", "<i class='fas fa-exclamation-triangle'></i> Connection lost");
     });
 
     socket.on("connect_error", (error) => {
@@ -151,25 +202,61 @@
       updateConnectionStatus(false);
     });
 
-    // Receive preview frames from server
+    // Pairing
+    document.getElementById("pairBtn").addEventListener("click", () => {
+      const code = pairingInput.value.trim().toUpperCase();
+      if (!code) {
+        updatePairingStatus("error", "<i class='fas fa-exclamation-circle'></i> Please enter pairing code");
+        return;
+      }
+
+      if (!code.startsWith("CANE-") || code.length !== 11) {
+        updatePairingStatus("error", "<i class='fas fa-exclamation-circle'></i> Invalid code format");
+        return;
+      }
+
+      currentPairingCode = code;
+      socket.emit("pairDevice", { 
+        deviceId: targetDeviceId, 
+        pairingCode: code 
+      });
+      log("🔐 Attempting to pair with code:", code);
+      updatePairingStatus("waiting", "<i class='fas fa-spinner fa-spin'></i> Pairing...");
+    });
+
+    // Listen for pairing result
+    socket.on("pairingSuccess", (data) => {
+      log("✅ Pairing successful:", data);
+      updatePairingStatus("paired", "<i class='fas fa-check-circle'></i> Paired & Ready");
+    });
+
+    socket.on("pairingFailed", (data) => {
+      log("❌ Pairing failed:", data.reason);
+      updatePairingStatus("error", `<i class='fas fa-times-circle'></i> ${data.reason}`);
+    });
+
+    // Receive preview frames
     socket.on("previewFrame", (data) => {
+      if (!isPaired) return;
       if (!data || data.deviceId !== targetDeviceId) return;
       if (data.image) {
         previewImage.src = data.image;
         previewImage.style.display = "block";
         previewPlaceholder.style.display = "none";
-        log("📸 Preview frame received");
       }
     });
 
-    // Helper to send commands
+    // Send commands (only if paired)
     function sendCommand(type, payload = {}) {
+      if (!isPaired) {
+        log("⚠️ Cannot send command: Not paired");
+        return;
+      }
+
       const msg = {
         deviceId: targetDeviceId,
-        command: {
-          type,
-          payload,
-        },
+        pairingCode: currentPairingCode,
+        command: { type, payload }
       };
       socket.emit("sendCommand", msg);
       log(`📤 Command sent: ${type}`, payload);
@@ -192,20 +279,26 @@
     document.getElementById("stopCamBtn").addEventListener("click", () => {
       sendCommand("STOP_CAMERA");
       log("🛑 Camera stop command sent");
-      // Hide preview when camera stops
       previewImage.style.display = "none";
       previewPlaceholder.style.display = "block";
     });
 
-    // Log any command responses
-    socket.on("command", (cmd) => {
-      log("📨 Command response:", cmd);
+    // Auto-uppercase pairing input
+    pairingInput.addEventListener("input", (e) => {
+      e.target.value = e.target.value.toUpperCase();
+    });
+
+    // Enter key to pair
+    pairingInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        document.getElementById("pairBtn").click();
+      }
     });
 
     // Initial log
     log("🎮 Controller initialized");
     log("🎯 Target device: " + targetDeviceId);
-    log("⏳ Waiting for connection...");
+    log("🔐 Enter pairing code to start");
   </script>
 </body>
 </html>
