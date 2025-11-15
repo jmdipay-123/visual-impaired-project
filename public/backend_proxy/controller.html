@@ -1,99 +1,211 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>Remote Control</title>
-    <script src="/socket.io/socket.io.js"></script>
-  </head>
-  <body>
-    <h1>Remote Control</h1>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visual Impaired Cane - Remote Controller</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/control.css">
+</head>
+<body>
+  <!-- HEADER -->
+  <header>
+    <div class="header-container">
+      <h1>
+        <i class="fas fa-blind"></i>
+        Remote Controller
+      </h1>
+      <div class="connection-badge" id="connectionBadge">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="connectionText">Connecting...</span>
+      </div>
+    </div>
+  </header>
 
-    <h2>Language</h2>
-    <select id="lang">
-      <option value="en">English</option>
-      <option value="tl">Tagalog</option>
-      <option value="ceb">Cebuano</option>
-    </select>
-    <button id="applyLangBtn">Apply Language</button>
+  <!-- MAIN DASHBOARD -->
+  <div class="dashboard">
+    <!-- SIDEBAR CONTROLS -->
+    <aside class="sidebar">
+      <!-- LANGUAGE CONTROL -->
+      <div class="control-card">
+        <div class="card-title">
+          <i class="fas fa-language"></i>
+          Language Control
+        </div>
+        <select id="lang" class="language-select">
+          <option value="en">🇬🇧 English</option>
+          <option value="tl">🇵🇭 Tagalog</option>
+          <option value="ceb">🇵🇭 Cebuano</option>
+        </select>
+        <button id="applyLangBtn" class="btn btn-primary">
+          <i class="fas fa-check"></i>
+          Apply Language
+        </button>
+        <div class="device-info">
+          <strong>Target Device:</strong>
+          <code>vision-device-1</code>
+        </div>
+      </div>
 
-    <h2>Camera</h2>
-    <button id="startCamBtn">Start Camera</button>
-    <button id="stopCamBtn">Stop Camera</button>
+      <!-- CAMERA CONTROL -->
+      <div class="control-card">
+        <div class="card-title">
+          <i class="fas fa-camera"></i>
+          Camera Control
+        </div>
+        <button id="startCamBtn" class="btn btn-primary">
+          <i class="fas fa-play"></i>
+          Start Camera
+        </button>
+        <button id="stopCamBtn" class="btn btn-danger">
+          <i class="fas fa-stop"></i>
+          Stop Camera
+        </button>
+      </div>
+    </aside>
 
-    <h2>Live Preview (slow)</h2>
-    <img
-      id="previewImage"
-      alt="Camera preview"
-      style="max-width: 100%; border: 1px solid #ccc;"
-    >
+    <!-- PREVIEW SECTION -->
+    <main class="preview-section">
+      <!-- LIVE PREVIEW -->
+      <div class="preview-card">
+        <div class="card-title">
+          <i class="fas fa-video"></i>
+          Live Preview
+        </div>
+        <div class="preview-container" id="previewContainer">
+          <div class="preview-placeholder" id="previewPlaceholder">
+            <i class="fas fa-camera"></i>
+            <h3>No Preview Available</h3>
+            <p>Start the camera to see live feed</p>
+          </div>
+          <img id="previewImage" alt="Camera preview" style="display: none;">
+        </div>
+      </div>
 
+      <!-- ACTIVITY LOG -->
+      <div class="log-card">
+        <div class="card-title">
+          <i class="fas fa-terminal"></i>
+          Activity Log
+        </div>
+        <div class="log-content" id="log"></div>
+      </div>
+    </main>
+  </div>
 
-    <hr />
-    <pre id="log" style="background:#111;color:#0f0;padding:8px;height:150px;overflow:auto;font-size:12px;"></pre>
+  <!-- FOOTER -->
+  <footer>
+    <p>&copy; 2024 Visual Impaired Cane System - Remote Control Interface</p>
+  </footer>
 
-    <script>
-      const targetDeviceId = "vision-device-1";
+  <!-- JAVASCRIPT -->
+  <script>
+    const targetDeviceId = "vision-device-1";
+    const logEl = document.getElementById("log");
+    const previewImage = document.getElementById("previewImage");
+    const previewPlaceholder = document.getElementById("previewPlaceholder");
+    const connectionBadge = document.getElementById("connectionBadge");
+    const connectionText = document.getElementById("connectionText");
+    const statusDot = document.getElementById("statusDot");
 
-      const logEl = document.getElementById("log");
-      function log(...args) {
-        console.log(...args);
-        logEl.textContent += args.map(a => (typeof a === "string" ? a : JSON.stringify(a))).join(" ") + "\n";
-        logEl.scrollTop = logEl.scrollHeight;
+    function log(...args) {
+      const timestamp = new Date().toLocaleTimeString();
+      const message = args.map(a => (typeof a === "string" ? a : JSON.stringify(a))).join(" ");
+      console.log(...args);
+      logEl.textContent += `[${timestamp}] ${message}\n`;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function updateConnectionStatus(connected) {
+      if (connected) {
+        connectionBadge.classList.add("connected");
+        connectionBadge.classList.remove("disconnected");
+        statusDot.classList.add("connected");
+        connectionText.textContent = "Connected";
+      } else {
+        connectionBadge.classList.remove("connected");
+        connectionBadge.classList.add("disconnected");
+        statusDot.classList.remove("connected");
+        connectionText.textContent = "Disconnected";
       }
+    }
 
-      const socket = io({
-        transports: ["websocket"],
-      });
+    // Socket.IO connection
+    const socket = io({
+      transports: ["websocket", "polling"],
+    });
 
-      socket.on("connect", () => {
-        log("[controller] connected:", socket.id);
-      });
+    socket.on("connect", () => {
+      log("✅ Connected to server:", socket.id);
+      updateConnectionStatus(true);
+    });
 
-      // 🔹 Tumanggap ng preview frames galing sa server
-socket.on("previewFrame", (data) => {
-  if (!data || data.deviceId !== targetDeviceId) return;
-  const img = document.getElementById("previewImage");
-  if (img && data.image) {
-    img.src = data.image;
-    log("[controller] previewFrame received");
-  }
-});
+    socket.on("disconnect", (reason) => {
+      log("❌ Disconnected:", reason);
+      updateConnectionStatus(false);
+    });
 
+    socket.on("connect_error", (error) => {
+      log("⚠️ Connection error:", error.message);
+      updateConnectionStatus(false);
+    });
 
-      // Helper to send commands
-      function sendCommand(type, payload = {}) {
-        const msg = {
-          deviceId: targetDeviceId,
-          command: {
-            type,
-            payload,
-          },
-        };
-        socket.emit("sendCommand", msg);
-        log("[controller] sendCommand:", msg);
+    // Receive preview frames from server
+    socket.on("previewFrame", (data) => {
+      if (!data || data.deviceId !== targetDeviceId) return;
+      if (data.image) {
+        previewImage.src = data.image;
+        previewImage.style.display = "block";
+        previewPlaceholder.style.display = "none";
+        log("📸 Preview frame received");
       }
+    });
 
-      // Language control
-      document.getElementById("applyLangBtn").addEventListener("click", () => {
-        const lang = document.getElementById("lang").value;
-        sendCommand("SET_LANGUAGE", { lang });
-      });
+    // Helper to send commands
+    function sendCommand(type, payload = {}) {
+      const msg = {
+        deviceId: targetDeviceId,
+        command: {
+          type,
+          payload,
+        },
+      };
+      socket.emit("sendCommand", msg);
+      log(`📤 Command sent: ${type}`, payload);
+    }
 
-      // Camera control
-      document.getElementById("startCamBtn").addEventListener("click", () => {
-        sendCommand("START_CAMERA");
-      });
+    // Language control
+    document.getElementById("applyLangBtn").addEventListener("click", () => {
+      const lang = document.getElementById("lang").value;
+      const langNames = { en: "English", tl: "Tagalog", ceb: "Cebuano" };
+      sendCommand("SET_LANGUAGE", { lang });
+      log(`🌐 Language changed to: ${langNames[lang]}`);
+    });
 
-      document.getElementById("stopCamBtn").addEventListener("click", () => {
-        sendCommand("STOP_CAMERA");
-      });
+    // Camera control
+    document.getElementById("startCamBtn").addEventListener("click", () => {
+      sendCommand("START_CAMERA");
+      log("📷 Camera start command sent");
+    });
 
-      // (optional) Just log any command echo back if you add that later
-      socket.on("command", (cmd) => {
-        log("[controller] command event:", cmd);
-      });
+    document.getElementById("stopCamBtn").addEventListener("click", () => {
+      sendCommand("STOP_CAMERA");
+      log("🛑 Camera stop command sent");
+      // Hide preview when camera stops
+      previewImage.style.display = "none";
+      previewPlaceholder.style.display = "block";
+    });
 
+    // Log any command responses
+    socket.on("command", (cmd) => {
+      log("📨 Command response:", cmd);
+    });
 
-    </script>
-  </body>
+    // Initial log
+    log("🎮 Controller initialized");
+    log("🎯 Target device: " + targetDeviceId);
+    log("⏳ Waiting for connection...");
+  </script>
+</body>
 </html>
