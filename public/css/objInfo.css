@@ -1,0 +1,222 @@
+    /* Information Page Specific Styles */
+    .info-hero {
+      text-align: center;
+      padding: 40px 20px;
+      margin-bottom: 40px;
+    }
+    
+    .info-hero h2 {
+      font-size: 2.5rem;
+      color: #333;
+      margin-bottom: 20px;
+      font-weight: 700;
+    }
+    
+    .info-hero p {
+      font-size: 1.2rem;
+      color: #666;
+      max-width: 800px;
+      margin: 0 auto;
+      line-height: 1.8;
+    }
+    
+    /* Feature Grid - Responsive */
+    .feature-grid {
+      display: grid;
+      gap: 30px;
+      margin: 40px 0;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    
+    /* Feature Cards Enhanced */
+    .feature-card {
+      background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+      border-radius: 16px;
+      padding: 40px 30px;
+      text-align: center;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #FF7A00, #FFB366);
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+    }
+    
+    .feature-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 24px rgba(255, 122, 0, 0.15);
+      border-color: #FF7A00;
+    }
+    
+    .feature-card:hover::before {
+      transform: scaleX(1);
+    }
+    
+    .feature-card i {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      color: #FF7A00;
+      transition: all 0.3s ease;
+    }
+    
+    .feature-card:hover i {
+      transform: scale(1.1);
+      color: #FF5500;
+    }
+    
+    .feature-card h3 {
+      font-size: 1.8rem;
+      color: #333;
+      margin-bottom: 15px;
+      font-weight: 700;
+    }
+    
+    .feature-card p {
+      font-size: 1.1rem;
+      color: #666;
+      line-height: 1.8;
+      margin: 0;
+    }
+    
+    /* Color coding for different objects */
+    .feature-card.people i {
+      color: #FF0000;
+    }
+    
+    .feature-card.people:hover i {
+      color: #CC0000;
+    }
+    
+    .feature-card.people:hover {
+      border-color: #FF0000;
+      box-shadow: 0 12px 24px rgba(255, 0, 0, 0.15);
+    }
+    
+    .feature-card.doors i {
+      color: #00FF00;
+    }
+    
+    .feature-card.doors:hover i {
+      color: #00CC00;
+    }
+    
+    .feature-card.doors:hover {
+      border-color: #00FF00;
+      box-shadow: 0 12px 24px rgba(0, 255, 0, 0.15);
+    }
+    
+    .feature-card.stairs i {
+      color: #FFA500;
+    }
+    
+    .feature-card.stairs:hover i {
+      color: #FF8C00;
+    }
+    
+    .feature-card.stairs:hover {
+      border-color: #FFA500;
+      box-shadow: 0 12px 24px rgba(255, 165, 0, 0.15);
+    }
+    
+    /* Additional Info Section */
+    .info-details {
+      background: #f8f9fa;
+      border-radius: 16px;
+      padding: 40px;
+      margin: 60px 0;
+    }
+    
+    .info-details h3 {
+      font-size: 2rem;
+      color: #333;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .info-details ul {
+      list-style: none;
+      padding: 0;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    .info-details li {
+      padding: 15px 20px;
+      margin: 10px 0;
+      background: white;
+      border-radius: 8px;
+      border-left: 4px solid #FF7A00;
+      font-size: 1.1rem;
+      color: #555;
+    }
+    
+    .info-details li i {
+      color: #FF7A00;
+      margin-right: 10px;
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 1920px) {
+      .feature-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    
+    @media (max-width: 1080px) {
+      .feature-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .info-hero h2 {
+        font-size: 2rem;
+      }
+      
+      .feature-card h3 {
+        font-size: 1.5rem;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .feature-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .info-hero h2 {
+        font-size: 1.8rem;
+      }
+      
+      .info-hero p {
+        font-size: 1rem;
+      }
+      
+      .feature-card {
+        padding: 30px 20px;
+      }
+      
+      .feature-card i {
+        font-size: 3rem;
+      }
+      
+      .feature-card h3 {
+        font-size: 1.4rem;
+      }
+      
+      .feature-card p {
+        font-size: 1rem;
+      }
+      
+      .info-details {
+        padding: 20px;
+      }
+    }

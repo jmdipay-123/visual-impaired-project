@@ -6,8 +6,8 @@
   // ROBOFLOW CONFIGURATION
   // ========================================
   const ROBOFLOW_CONFIG = {
-    apiKey: 'qjiHA3BXwtmd66jycXB8',
-    modelId: 'objdetection-jeqju',
+    apiKey: '4vrQcPeCkTmfbtBdaGdf',
+    modelId: 'objdetection-o3v1s',
     version: '1',
     confidenceThreshold: 40,
     fps: 4,
@@ -22,10 +22,10 @@
   // Map corrupted class names to proper ones
   const CLASS_NAME_MAP = {
     // User confirmed mapping:
-    '2': 'stairs',                           // Green class (4,027 images) ✅
-    '2 0 0 0 1 1 1 1 0 0 0': 'door',    // Red class (2,256 images) ✅
+    '2': 'stairs',                           // Green class (4,027 images) 
+    '2 0 0 0 1 1 1 1 0 0 0': 'door',    // Red class (2,256 images) 
     // Purple class (super long) - matches any class starting with "2 1 0-"
-    // This is PERSON (1,441 images) ✅
+    // This is PERSON (1,441 images) 
   };
 
   /**

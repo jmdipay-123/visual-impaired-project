@@ -1,84 +1,133 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Home | Object Recognition and Navigation for Visually Impaired Person</title>
-  <link rel="stylesheet" href="./css/styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <meta name="description" content="Learn about the objects detected by our Object Recognition and Navigation system">
+  <title>Object Information | Object Recognition and Navigation for Visually Impaired Person</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="alternate icon" href="./favicon.ico">
+  
+  <link rel="stylesheet" href="./css/objInfo.css" />
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="./css/mobile.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <style>
-    @media (max-width: 1920px) {
-      .feature-grid {
-        grid-template-columns: repeat(3, 1fr) !important;
-      }
-    }
-    @media (max-width: 1080px) {
-      .feature-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-      }
-    }
-    @media (max-width: 768px) {
-      .feature-grid {
-        grid-template-columns: repeat(1, 1fr) !important;
-      }
-    }
-  </style>
+  
 </head>
-
 <body>
+  <!-- Language Switcher -->
+  <div class="language-switcher" role="navigation" aria-label="Language selection">
+    <button class="lang-btn" data-lang="en" onclick="changeLanguage('en')" aria-label="English">
+      EN
+    </button>
+    <button class="lang-btn" data-lang="tl" onclick="changeLanguage('tl')" aria-label="Tagalog">
+      TL
+    </button>
+    <button class="lang-btn" data-lang="ceb" onclick="changeLanguage('ceb')" aria-label="Cebuano">
+      CEB
+    </button>
+  </div>
+
   <header>
     <div class="container">
-      <button class="menu-toggle"><i class="fas fa-bars"></i></button>
-      <a style="color: #fff;text-decoration: none;" href="/"><h1><i class="fa-solid fa-magnifying-glass"></i> Object Recognition and Navigation</h1></a>
+      <button class="menu-toggle" aria-label="Toggle navigation menu">
+        <i class="fas fa-bars"></i>
+      </button>
+      <a style="color: #fff; text-decoration: none;" href="/">
+        <h1>
+          <i class="fa-solid fa-magnifying-glass"></i> 
+          Object Recognition and Navigation
+        </h1>
+      </a>
       <nav>
         <ul id="navMenu">
           <li><a href="./index.html">Home</a></li>
           <li><a href="./information.html">Object Information</a></li>
+          <li><a href="./backend_proxy/controller.html">Controls</a></li>
+        </ul>
       </nav>
     </div>
   </header>
 
   <main class="container">
-    <section id="home" class="hero-section">
+    <!-- Info Hero Section -->
+    <section class="info-hero">
       <h2 data-i18n="objectInformationTitle">Object Information</h2>
+      <p>Learn about the objects our system can detect to help you navigate safely and confidently.</p>
+    </section>
 
+    <!-- Feature Grid -->
+    <section>
       <div class="feature-grid">
-        <div class="feature-card">
-          <i class="fas fa-person"></i>
+        <!-- People Card -->
+        <div class="feature-card people">
+          <i class="fas fa-person" aria-hidden="true"></i>
           <h3 data-i18n="objectPeopleTitle">People</h3>
           <p data-i18n="objectPeopleDesc">
-            The camera automatically detects and identifies people in real time.
+            The camera automatically detects and identifies people in real time, helping you avoid collisions and navigate crowded spaces safely.
           </p>
         </div>
 
-        <div class="feature-card">
-          <i class="fas fa-door-open"></i>
+        <!-- Doors Card -->
+        <div class="feature-card doors">
+          <i class="fas fa-door-open" aria-hidden="true"></i>
           <h3 data-i18n="objectDoorsTitle">Doors</h3>
           <p data-i18n="objectDoorsDesc">
-            The system recognizes doors and helps indicate their location and orientation.
+            The system recognizes doors and helps indicate their location and orientation, making it easier to find entrances and exits.
           </p>
         </div>
 
-        <div class="feature-card">
-          <i class="fas fa-stairs"></i>
+        <!-- Stairs Card -->
+        <div class="feature-card stairs">
+          <i class="fas fa-stairs" aria-hidden="true"></i>
           <h3 data-i18n="objectStairsTitle">Stairs</h3>
           <p data-i18n="objectStairsDesc">
-            The camera detects stairs to assist with safe navigation and movement.
+            The camera detects stairs to assist with safe navigation and movement, with audio and vibration warnings for added safety.
           </p>
         </div>
       </div>
+    </section>
+
+    <!-- Additional Information -->
+    <section class="info-details">
+      <h3>How It Works</h3>
+      <ul>
+        <li>
+          <i class="fas fa-video"></i>
+          <strong>Real-time Camera Detection:</strong> Uses your device camera to continuously scan the environment
+        </li>
+        <li>
+          <i class="fas fa-brain"></i>
+          <strong>AI-Powered Recognition:</strong> Identifies objects with great accuracy
+        </li>
+        <li>
+          <i class="fas fa-volume-up"></i>
+          <strong>Audio Alerts:</strong> Announces detected objects in your preferred language (English, Tagalog, or Cebuano)
+        </li>
+        <li>
+          <i class="fas fa-palette"></i>
+          <strong>Color-Coded Boxes:</strong> Visual indicators show detected objects with color-coded bounding boxes
+        </li>
+        <li>
+          <i class="fas fa-exclamation-triangle"></i>
+          <strong>Priority Warnings:</strong> Stairs receive highest priority for safety, followed by people and doors
+        </li>
+      </ul>
     </section>
   </main>
 
   <footer>
     <div class="container">
-      <p>© 2025 Enhancing Object Recognition. All rights reserved.</p>
+      <p>&copy; 2025 Enhancing Object Recognition. All rights reserved.</p>
     </div>
   </footer>
 
-  <script src="./js/script.js"></script>
+  <!-- Translations Script (Load First) -->
+  <script src="./js/translations.js"></script>
+  
+  <!-- Application Scripts -->
   <script src="./js/burger.js"></script>
 </body>
-
 </html>

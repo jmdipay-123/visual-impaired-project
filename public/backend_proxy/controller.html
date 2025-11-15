@@ -7,6 +7,48 @@
   <script src="/socket.io/socket.io.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="../css/control.css">
+  <link rel="stylesheet" href="../css/styles.css">
+  
+  <style>
+    /* Internal CSS to override external styles */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+    
+    #navMenu {
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      margin: 0;
+      padding: 0;
+    }
+    
+    #navMenu li {
+      margin: 0;
+      padding: 0;
+    }
+    
+    #navMenu a {
+      color: var(--text-primary, #f1f5f9);
+      text-decoration: none;
+      font-weight: 500;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      display: block;
+    }
+    
+    #navMenu a:hover {
+      background: rgba(255, 122, 0, 0.1);
+      color: var(--primary-color, #FF7A00);
+    }
+  </style>
 
 </head>
 <body>
@@ -17,10 +59,17 @@
         <i class="fas fa-blind"></i>
         Remote Controller
       </h1>
-      <div class="connection-badge" id="connectionBadge">
-        <span class="status-dot" id="statusDot"></span>
-        <span id="connectionText">Connecting...</span>
-      </div>
+      <nav>
+        <ul id="navMenu">
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../information.html">Object Information</a></li>
+          <li><a href="./controller.html">Controls</a></li>
+        </ul>
+        <div class="connection-badge" id="connectionBadge">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="connectionText">Connecting...</span>
+        </div>
+      </nav>
     </div>
   </header>
 
@@ -42,7 +91,7 @@
             placeholder="CANE-XXXXXX"
             maxlength="11"
           >
-          <button id="pairBtn" class="btn btn-primary" style="width: auto; padding: 12px 20px;">
+          <button id="pairBtn" class="btn btn-primary">
             <i class="fas fa-link"></i>
             Pair
           </button>
