@@ -21,7 +21,7 @@
   
   // Map corrupted class names to proper ones
   const CLASS_NAME_MAP = {
-    // User confirmed mapping:
+    // User confirmed mapping in ROBOFLOW (2 models):  
     '2': 'stairs',                           // Green class (4,027 images) 
     '2 0 0 0 1 1 1 1 0 0 0': 'door',    // Red class (2,256 images) 
     // Purple class (super long) - matches any class starting with "2 1 0-"
