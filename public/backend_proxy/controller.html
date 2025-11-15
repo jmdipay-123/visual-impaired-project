@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="../css/control.css">
   <link rel="stylesheet" href="../css/styles.css">
+  <script src="../js/translations.js"></script>
+
   
   <style>
     /* Internal CSS to override external styles */
@@ -52,6 +54,18 @@
 
 </head>
 <body>
+  <!-- Language Switcher -->
+  <div class="language-switcher" role="navigation" aria-label="Language selection">
+    <button class="lang-btn active" data-lang="en" onclick="changeLanguage('en')" aria-label="English">
+      EN
+    </button>
+    <button class="lang-btn" data-lang="tl" onclick="changeLanguage('tl')" aria-label="Tagalog">
+      TL
+    </button>
+    <button class="lang-btn" data-lang="ceb" onclick="changeLanguage('ceb')" aria-label="Cebuano">
+      CEB
+    </button>
+  </div>
   <!-- HEADER -->
   <header>
     <div class="header-container">
@@ -183,6 +197,11 @@
     const statusDot = document.getElementById("statusDot");
     const pairingStatus = document.getElementById("pairingStatus");
     const pairingInput = document.getElementById("pairingCodeInput");
+    // I-sync ang dropdown sa global language (galing translations.js)
+    const langSelect = document.getElementById("lang");
+    if (langSelect && window.getCurrentLanguage) {
+      langSelect.value = window.getCurrentLanguage();
+    }
 
     function log(...args) {
       const timestamp = new Date().toLocaleTimeString();

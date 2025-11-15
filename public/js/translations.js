@@ -40,6 +40,43 @@ const translations = {
     doorsDetected: 'doors detected',
     objectDetected: 'detected',
     
+
+    // Controller Page
+    controllerPageTitle: 'Remote Controller | Object Recognition and Navigation for Visually Impaired Person',
+    controllerHeaderTitle: 'Remote Controller',
+    navControls: 'Controls',
+
+    connectionConnecting: 'Connecting...',
+    connectionConnected: 'Connected',
+    connectionDisconnected: 'Disconnected',
+
+    devicePairingTitle: 'Device Pairing',
+    pairingPlaceholder: 'CANE-XXXXXX',
+    pairingBtn: 'Pair',
+
+    pairingStatusPrompt: 'Enter pairing code from device',
+    pairingStatusCodeRequired: 'Please enter pairing code',
+    pairingStatusInvalidFormat: 'Invalid code format',
+    pairingStatusPairing: 'Pairing...',
+    pairingStatusPaired: 'Paired & Ready',
+    pairingStatusFailed: 'Pairing failed',
+    pairingStatusConnectionLost: 'Connection lost',
+
+    languageControlTitle: 'Language Control',
+    languageApplyBtn: 'Apply Language',
+
+    cameraControlTitle: 'Camera Control',
+    startCameraBtn: 'Start Camera',
+    stopCameraBtn: 'Stop Camera',
+
+    livePreviewTitle: 'Live Preview',
+    previewNoneTitle: 'No Preview Available',
+    previewNoneDesc: 'Pair device and start camera to see live feed',
+
+    activityLogTitle: 'Activity Log',
+
+    controllerFooterText: '© 2025 Visual Impaired Cane System - Remote Control Interface',
+
     // Accessibility
     toggleMenuLabel: 'Toggle navigation menu',
     modalLabel: 'Full size image preview',
@@ -86,6 +123,43 @@ const translations = {
     doorsDetected: 'mga pinto ang nakita',
     objectDetected: 'nakita',
     
+    // Controller Page
+    controllerPageTitle: 'Remote Controller | Pagkilala ng Bagay at Nabigasyon para sa Taong May Kapansanan sa Paningin',
+    controllerHeaderTitle: 'Remote Controller',
+    navControls: 'Kontrol',
+
+    connectionConnecting: 'Kumokonekta...',
+    connectionConnected: 'Nakakonekta',
+    connectionDisconnected: 'Nadiskonekta',
+
+    devicePairingTitle: 'Pag-pair ng Device',
+    pairingPlaceholder: 'CANE-XXXXXX',
+    pairingBtn: 'I-pair',
+
+    pairingStatusPrompt: 'Ilagay ang pairing code mula sa device',
+    pairingStatusCodeRequired: 'Pakilagay ang pairing code',
+    pairingStatusInvalidFormat: 'Maling format ng code',
+    pairingStatusPairing: 'Nagpa-pair...',
+    pairingStatusPaired: 'Nakapares at handa na',
+    pairingStatusFailed: 'Hindi nagtagumpay ang pairing',
+    pairingStatusConnectionLost: 'Nawala ang koneksyon',
+
+    languageControlTitle: 'Kontrol ng Wika',
+    languageApplyBtn: 'I-apply ang Wika',
+
+    cameraControlTitle: 'Kontrol ng Camera',
+    startCameraBtn: 'Simulan ang Camera',
+    stopCameraBtn: 'Itigil ang Camera',
+
+    livePreviewTitle: 'Live Preview',
+    previewNoneTitle: 'Walang Preview',
+    previewNoneDesc: 'I-pair ang device at i-start ang camera para makita ang live feed',
+
+    activityLogTitle: 'Talaan ng Aktibidad',
+
+    controllerFooterText: '© 2025 Visual Impaired Cane System - Remote Control Interface',
+
+
     // Accessibility
     toggleMenuLabel: 'Buksan o isara ang navigation menu',
     modalLabel: 'Buong laki ng preview ng larawan',
@@ -132,6 +206,43 @@ const translations = {
     doorsDetected: 'ka pultahan ang nakita',
     objectDetected: 'nakita',
     
+    // Controller Page
+    controllerPageTitle: 'Remote Controller | Pag-ila sa Butang ug Nabigasyon alang sa Tawo nga adunay Kapansanan sa Panan-aw',
+    controllerHeaderTitle: 'Remote Controller',
+    navControls: 'Kontrol',
+
+    connectionConnecting: 'Nagkonektar...',
+    connectionConnected: 'Nakakonektar',
+    connectionDisconnected: 'Naputol ang koneksyon',
+
+    devicePairingTitle: 'Pag-pair sa Device',
+    pairingPlaceholder: 'CANE-XXXXXX',
+    pairingBtn: 'Pair',
+
+    pairingStatusPrompt: 'Ibutang ang pairing code gikan sa device',
+    pairingStatusCodeRequired: 'Palihug ibutang ang pairing code',
+    pairingStatusInvalidFormat: 'Sayop nga porma sa code',
+    pairingStatusPairing: 'Nag-pair...',
+    pairingStatusPaired: 'Na-pair ug andam na',
+    pairingStatusFailed: 'Napakyas ang pairing',
+    pairingStatusConnectionLost: 'Nawala ang koneksyon',
+
+    languageControlTitle: 'Kontrol sa Pinulongan',
+    languageApplyBtn: 'I-apply ang Pinulongan',
+
+    cameraControlTitle: 'Kontrol sa Camera',
+    startCameraBtn: 'Sugdi ang Camera',
+    stopCameraBtn: 'Hunongi ang Camera',
+
+    livePreviewTitle: 'Live Preview',
+    previewNoneTitle: 'Walay Preview',
+    previewNoneDesc: 'I-pair ang device ug sugdi ang camera aron makita ang live feed',
+
+    activityLogTitle: 'Log sa Aktibidad',
+
+    controllerFooterText: '© 2025 Visual Impaired Cane System - Remote Control Interface',
+
+
     // Accessibility
     toggleMenuLabel: 'Ablihi o sirahi ang navigation menu',
     modalLabel: 'Tibuok nga gidak-on sa preview sa hulagway',
@@ -215,6 +326,129 @@ function updatePageLanguage() {
   const loadingSvg = document.querySelector('#loadingSpinner svg');
   if (loadingSvg) loadingSvg.setAttribute('aria-label', t('loadingLabel'));
 }
+
+// Helper: check kung controller.html ang page
+function isControllerPage() {
+  return window.location && window.location.pathname &&
+         window.location.pathname.indexOf('controller.html') !== -1;
+}
+
+// Update texts specific sa controller.html
+function updateControllerTexts() {
+  if (!isControllerPage()) return;
+
+  // Document title
+  document.title = t('controllerPageTitle');
+
+  // Header
+  const headerTitle = document.querySelector('header h1');
+  if (headerTitle) {
+    headerTitle.innerHTML = `<i class="fas fa-blind"></i> ${t('controllerHeaderTitle')}`;
+  }
+
+  // Navigation (../index.html, ../information.html, ./controller.html)
+  updateElementText('#navMenu a[href$="index.html"]', t('navHome'));
+  updateElementText('#navMenu a[href$="information.html"]', t('navInfo'));
+  updateElementText('#navMenu a[href$="controller.html"]', t('navControls'));
+
+  // Connection badge text
+  const connectionTextEl = document.getElementById('connectionText');
+  const statusDotEl = document.getElementById('statusDot');
+  if (connectionTextEl) {
+    if (statusDotEl && statusDotEl.classList.contains('connected')) {
+      connectionTextEl.textContent = t('connectionConnected');
+    } else if (statusDotEl && statusDotEl.classList.contains('disconnected')) {
+      connectionTextEl.textContent = t('connectionDisconnected');
+    } else {
+      connectionTextEl.textContent = t('connectionConnecting');
+    }
+  }
+
+  // Device pairing card
+  const pairingInput = document.getElementById('pairingCodeInput');
+  if (pairingInput) {
+    pairingInput.placeholder = t('pairingPlaceholder');
+    const pairingCard = pairingInput.closest('.control-card');
+    if (pairingCard) {
+      const pairingTitle = pairingCard.querySelector('.card-title');
+      if (pairingTitle) {
+        pairingTitle.innerHTML = `<i class="fas fa-lock"></i> ${t('devicePairingTitle')}`;
+      }
+    }
+  }
+
+  const pairBtn = document.getElementById('pairBtn');
+  if (pairBtn) {
+    pairBtn.innerHTML = `<i class="fas fa-link"></i> ${t('pairingBtn')}`;
+  }
+
+  const pairingStatusEl = document.getElementById('pairingStatus');
+  if (pairingStatusEl && pairingStatusEl.classList.contains('waiting')) {
+    pairingStatusEl.innerHTML = `<i class="fas fa-info-circle"></i> ${t('pairingStatusPrompt')}`;
+  }
+
+  // Language control card
+  const languageCard = document.getElementById('languageCard');
+  if (languageCard) {
+    const langTitle = languageCard.querySelector('.card-title');
+    if (langTitle) {
+      langTitle.innerHTML = `<i class="fas fa-language"></i> ${t('languageControlTitle')}`;
+    }
+  }
+
+  const applyLangBtn = document.getElementById('applyLangBtn');
+  if (applyLangBtn) {
+    applyLangBtn.innerHTML = `<i class="fas fa-check"></i> ${t('languageApplyBtn')}`;
+  }
+
+  // Camera control card
+  const cameraCard = document.getElementById('cameraCard');
+  if (cameraCard) {
+    const camTitle = cameraCard.querySelector('.card-title');
+    if (camTitle) {
+      camTitle.innerHTML = `<i class="fas fa-camera"></i> ${t('cameraControlTitle')}`;
+    }
+  }
+
+  const startCamBtn = document.getElementById('startCamBtn');
+  if (startCamBtn) {
+    startCamBtn.innerHTML = `<i class="fas fa-play"></i> ${t('startCameraBtn')}`;
+  }
+
+  const stopCamBtn = document.getElementById('stopCamBtn');
+  if (stopCamBtn) {
+    stopCamBtn.innerHTML = `<i class="fas fa-stop"></i> ${t('stopCameraBtn')}`;
+  }
+
+  // Live preview card
+  const previewCardTitle = document.querySelector('.preview-card .card-title');
+  if (previewCardTitle) {
+    previewCardTitle.innerHTML = `<i class="fas fa-video"></i> ${t('livePreviewTitle')}`;
+  }
+
+  const previewPlaceholderTitle = document.querySelector('#previewPlaceholder h3');
+  if (previewPlaceholderTitle) {
+    previewPlaceholderTitle.textContent = t('previewNoneTitle');
+  }
+
+  const previewPlaceholderDesc = document.querySelector('#previewPlaceholder p');
+  if (previewPlaceholderDesc) {
+    previewPlaceholderDesc.textContent = t('previewNoneDesc');
+  }
+
+  // Activity log card
+  const logCardTitle = document.querySelector('.log-card .card-title');
+  if (logCardTitle) {
+    logCardTitle.innerHTML = `<i class="fas fa-terminal"></i> ${t('activityLogTitle')}`;
+  }
+
+  // Footer
+  const footerP = document.querySelector('footer p');
+  if (footerP) {
+    footerP.textContent = t('controllerFooterText');
+  }
+}
+
 
 // Helper function to update element text
 function updateElementText(selector, text) {
