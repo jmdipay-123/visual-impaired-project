@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home | Object Recognition and Navigation for Visually Impaired Person</title>
+  <link rel="stylesheet" href="./css/styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    @media (max-width: 1920px) {
+      .feature-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+      }
+    }
+    @media (max-width: 1080px) {
+      .feature-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+    }
+    @media (max-width: 768px) {
+      .feature-grid {
+        grid-template-columns: repeat(1, 1fr) !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="container">
+      <button class="menu-toggle"><i class="fas fa-bars"></i></button>
+      <a style="color: #fff;text-decoration: none;" href="/"><h1><i class="fa-solid fa-magnifying-glass"></i> Object Recognition and Navigation</h1></a>
+      <nav>
+        <ul id="navMenu">
+          <li><a href="./index.html">Home</a></li>
+          <li><a href="./information.html">Object Information</a></li>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="home" class="hero-section">
+      <h2 data-i18n="objectInformationTitle">Object Information</h2>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <i class="fas fa-person"></i>
+          <h3 data-i18n="objectPeopleTitle">People</h3>
+          <p data-i18n="objectPeopleDesc">
+            The camera automatically detects and identifies people in real time.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <i class="fas fa-door-open"></i>
+          <h3 data-i18n="objectDoorsTitle">Doors</h3>
+          <p data-i18n="objectDoorsDesc">
+            The system recognizes doors and helps indicate their location and orientation.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <i class="fas fa-stairs"></i>
+          <h3 data-i18n="objectStairsTitle">Stairs</h3>
+          <p data-i18n="objectStairsDesc">
+            The camera detects stairs to assist with safe navigation and movement.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>© 2025 Enhancing Object Recognition. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="./js/script.js"></script>
+  <script src="./js/burger.js"></script>
+</body>
+
+</html>
