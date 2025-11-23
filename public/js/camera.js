@@ -77,6 +77,55 @@
     }
   }
 
+  // Announce message and wait for audio to complete
+  function announceMessage(message) {
+    return new Promise((resolve) => {
+      // If no speech support, just resolve immediately
+      if (!window.speechSynthesis && !window.speak) {
+        setTimeout(resolve, 500); // Small delay for visual effect
+        return;
+      }
+
+      // Check if using TTS (speechSynthesis)
+      if (window.speechSynthesis && window.speak) {
+        // Create a custom utterance to listen for completion
+        const utterance = new SpeechSynthesisUtterance(message);
+        
+        // Get current language
+        const langCode = window.getCurrentLanguage ? window.getCurrentLanguage() : 'en';
+        if (langCode === 'tl' || langCode === 'ta') {
+          utterance.lang = 'fil-PH';
+        } else if (langCode === 'ceb' || langCode === 'ce') {
+          utterance.lang = 'fil-PH';
+        } else {
+          utterance.lang = 'en-US';
+        }
+
+        // Listen for speech end
+        utterance.onend = () => {
+          setTimeout(resolve, 300); // Small buffer after speech
+        };
+
+        utterance.onerror = () => {
+          setTimeout(resolve, 500); // Continue even if error
+        };
+
+        // Cancel any ongoing speech and speak
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
+      } else {
+        // Fallback: use window.speak if available
+        if (window.speak) {
+          window.speak(message);
+        }
+        // Estimate speech duration (rough: 150ms per word + base time)
+        const wordCount = message.split(' ').length;
+        const estimatedDuration = Math.max(1000, wordCount * 150 + 500);
+        setTimeout(resolve, estimatedDuration);
+      }
+    });
+  }
+
   function updateStartupProgress(step, message) {
     if (!startupIndicator) return;
 
@@ -111,11 +160,6 @@
         icon.className = 'fas fa-circle';
       }
     });
-
-    // Announce progress via TTS/audio
-    if (window.speak) {
-      window.speak(message);
-    }
   }
 
   function removeStartupIndicator() {
@@ -204,7 +248,7 @@
       // Step 1: Requesting camera access
       const step1Message = window.t ? window.t('cameraRequestingAccess') : 'Requesting camera access...';
       updateStartupProgress(1, step1Message);
-      await delay(800);
+      await announceMessage(step1Message);
 
       // Request camera access
       const constraints = {
@@ -221,7 +265,7 @@
       // Step 2: Initializing camera
       const step2Message = window.t ? window.t('cameraInitializing') : 'Initializing camera...';
       updateStartupProgress(2, step2Message);
-      await delay(800);
+      await announceMessage(step2Message);
 
       // Set up video element
       videoPreview.srcObject = stream;
@@ -239,7 +283,7 @@
       // Step 3: Detection ready
       const step3Message = window.t ? window.t('cameraDetectionReady') : 'Detection ready';
       updateStartupProgress(3, step3Message);
-      await delay(800);
+      await announceMessage(step3Message);
 
       // Update button states
       isCameraActive = true;
