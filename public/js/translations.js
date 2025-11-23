@@ -30,7 +30,7 @@ const translations = {
     placeholderText: 'Click "Use Camera" to start detection',
     
     // Footer
-    footerText: '© 2025 Enhancing Object Recognition. All rights reserved.',
+    footerText: 'Â© 2025 Enhancing Object Recognition. All rights reserved.',
     
     // Voice Announcements
     personDetected: 'Person detected',
@@ -43,7 +43,13 @@ const translations = {
     // Accessibility
     toggleMenuLabel: 'Toggle navigation menu',
     modalLabel: 'Full size image preview',
-    loadingLabel: 'Loading'
+    loadingLabel: 'Loading',
+    
+    // Camera Startup Progress
+    cameraRequestingAccess: 'Requesting camera access...',
+    cameraInitializing: 'Initializing camera...',
+    cameraDetectionReady: 'Detection ready',
+    cameraActive: 'Camera active'
   },
   
   tl: {
@@ -76,7 +82,7 @@ const translations = {
     placeholderText: 'I-click ang "Gamitin ang Camera" upang magsimula ng pagtuklas',
     
     // Footer
-    footerText: '© 2025 Pagpapahusay ng Pagkilala ng Bagay. Lahat ng karapatan ay nakalaan.',
+    footerText: 'Â© 2025 Pagpapahusay ng Pagkilala ng Bagay. Lahat ng karapatan ay nakalaan.',
     
     // Voice Announcements
     personDetected: 'May taong nakita',
@@ -89,7 +95,13 @@ const translations = {
     // Accessibility
     toggleMenuLabel: 'Buksan o isara ang navigation menu',
     modalLabel: 'Buong laki ng preview ng larawan',
-    loadingLabel: 'Nag-loload'
+    loadingLabel: 'Nag-loload',
+    
+    // Camera Startup Progress
+    cameraRequestingAccess: 'Humihiling ng access sa camera...',
+    cameraInitializing: 'Sinisimulan ang camera...',
+    cameraDetectionReady: 'Handa na ang detection',
+    cameraActive: 'Aktibo ang camera'
   },
   
   ceb: {
@@ -122,7 +134,7 @@ const translations = {
     placeholderText: 'I-click ang "Gamita ang Camera" aron magsugod sa pagpangita',
     
     // Footer
-    footerText: '© 2025 Pagpaayo sa Pag-ila sa Butang. Tanang katungod gi-reservar.',
+    footerText: 'Â© 2025 Pagpaayo sa Pag-ila sa Butang. Tanang katungod gi-reservar.',
     
     // Voice Announcements
     personDetected: 'Adunay tawo nga nakita',
@@ -135,7 +147,13 @@ const translations = {
     // Accessibility
     toggleMenuLabel: 'Ablihi o sirahi ang navigation menu',
     modalLabel: 'Tibuok nga gidak-on sa preview sa hulagway',
-    loadingLabel: 'Nag-load'
+    loadingLabel: 'Nag-load',
+    
+    // Camera Startup Progress
+    cameraRequestingAccess: 'Nangayo ug access sa camera...',
+    cameraInitializing: 'Gisugdan ang camera...',
+    cameraDetectionReady: 'Andam na ang detection',
+    cameraActive: 'Aktibo ang camera'
   }
 };
 

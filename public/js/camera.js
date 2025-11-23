@@ -12,13 +12,184 @@
   // Camera state
   let stream = null;
   let isCameraActive = false;
+  let startupIndicator = null;
+  let recordingIndicator = null;
 
   // Check if browser supports getUserMedia
   const hasGetUserMedia = () => {
     return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
   };
 
-  // Request camera access
+  // ========================================
+  // STARTUP PROGRESS INDICATOR
+  // ========================================
+  
+  function createStartupIndicator() {
+    // Remove any existing indicator
+    if (startupIndicator) {
+      startupIndicator.remove();
+    }
+
+    startupIndicator = document.createElement('div');
+    startupIndicator.id = 'cameraStartupIndicator';
+    startupIndicator.style.cssText = `
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.9);
+      color: white;
+      padding: 30px 40px;
+      border-radius: 15px;
+      z-index: 100;
+      text-align: center;
+      min-width: 300px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      animation: fadeIn 0.3s ease;
+    `;
+
+    startupIndicator.innerHTML = `
+      <div class="startup-icon" style="font-size: 48px; margin-bottom: 15px;">
+        <i class="fas fa-camera" style="color: #FF7A00;"></i>
+      </div>
+      <div class="startup-message" style="font-size: 18px; font-weight: 600; margin-bottom: 10px;">
+        Initializing...
+      </div>
+      <div class="startup-steps" style="margin-top: 20px;">
+        <div class="step" data-step="1" style="display: flex; align-items: center; justify-content: center; margin: 10px 0; opacity: 0.5;">
+          <i class="fas fa-circle" style="font-size: 8px; margin-right: 10px;"></i>
+          <span>Requesting access</span>
+        </div>
+        <div class="step" data-step="2" style="display: flex; align-items: center; justify-content: center; margin: 10px 0; opacity: 0.5;">
+          <i class="fas fa-circle" style="font-size: 8px; margin-right: 10px;"></i>
+          <span>Initializing camera</span>
+        </div>
+        <div class="step" data-step="3" style="display: flex; align-items: center; justify-content: center; margin: 10px 0; opacity: 0.5;">
+          <i class="fas fa-circle" style="font-size: 8px; margin-right: 10px;"></i>
+          <span>Starting detection</span>
+        </div>
+      </div>
+    `;
+
+    const previewContainer = document.querySelector('.image-preview-container');
+    if (previewContainer) {
+      previewContainer.appendChild(startupIndicator);
+    }
+  }
+
+  function updateStartupProgress(step, message) {
+    if (!startupIndicator) return;
+
+    const messageEl = startupIndicator.querySelector('.startup-message');
+    const stepEls = startupIndicator.querySelectorAll('.step');
+    
+    if (messageEl) {
+      messageEl.textContent = message;
+    }
+
+    // Highlight current and completed steps
+    stepEls.forEach((stepEl, index) => {
+      const stepNumber = index + 1;
+      const icon = stepEl.querySelector('i');
+      
+      if (stepNumber < step) {
+        // Completed step
+        stepEl.style.opacity = '1';
+        stepEl.style.color = '#4CAF50';
+        icon.className = 'fas fa-check-circle';
+        icon.style.color = '#4CAF50';
+      } else if (stepNumber === step) {
+        // Current step
+        stepEl.style.opacity = '1';
+        stepEl.style.color = '#FF7A00';
+        icon.className = 'fas fa-spinner fa-spin';
+        icon.style.color = '#FF7A00';
+      } else {
+        // Future step
+        stepEl.style.opacity = '0.5';
+        stepEl.style.color = '#999';
+        icon.className = 'fas fa-circle';
+      }
+    });
+
+    // Announce progress via TTS/audio
+    if (window.speak) {
+      window.speak(message);
+    }
+  }
+
+  function removeStartupIndicator() {
+    if (startupIndicator) {
+      startupIndicator.style.animation = 'fadeOut 0.3s ease';
+      setTimeout(() => {
+        if (startupIndicator && startupIndicator.parentNode) {
+          startupIndicator.remove();
+        }
+        startupIndicator = null;
+      }, 300);
+    }
+  }
+
+  // ========================================
+  // RECORDING INDICATOR
+  // ========================================
+  
+  function createRecordingIndicator() {
+    if (recordingIndicator) return;
+
+    recordingIndicator = document.createElement('div');
+    recordingIndicator.id = 'recordingIndicator';
+    recordingIndicator.style.cssText = `
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      display: flex;
+      align-items: center;
+      background: rgba(220, 53, 69, 0.9);
+      color: white;
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      z-index: 50;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      animation: fadeIn 0.3s ease;
+    `;
+
+    recordingIndicator.innerHTML = `
+      <span class="recording-dot" style="
+        width: 12px;
+        height: 12px;
+        background: white;
+        border-radius: 50%;
+        margin-right: 8px;
+        animation: pulse 1.5s infinite;
+      "></span>
+      <span>${window.t ? window.t('cameraActive') : 'Camera active'}</span>
+    `;
+
+    const previewContainer = document.querySelector('.image-preview-container');
+    if (previewContainer) {
+      previewContainer.appendChild(recordingIndicator);
+    }
+  }
+
+  function removeRecordingIndicator() {
+    if (recordingIndicator) {
+      recordingIndicator.style.animation = 'fadeOut 0.3s ease';
+      setTimeout(() => {
+        if (recordingIndicator && recordingIndicator.parentNode) {
+          recordingIndicator.remove();
+        }
+        recordingIndicator = null;
+      }, 300);
+    }
+  }
+
+  // ========================================
+  // REQUEST CAMERA ACCESS
+  // ========================================
+  
   async function startCamera() {
     if (!hasGetUserMedia()) {
       showError('Camera is not supported by your browser');
@@ -26,9 +197,14 @@
     }
 
     try {
-      // Show loading state
-      showLoading(true);
+      // Create startup indicator
+      createStartupIndicator();
       useCameraBtn.disabled = true;
+
+      // Step 1: Requesting camera access
+      const step1Message = window.t ? window.t('cameraRequestingAccess') : 'Requesting camera access...';
+      updateStartupProgress(1, step1Message);
+      await delay(800);
 
       // Request camera access
       const constraints = {
@@ -42,21 +218,39 @@
 
       stream = await navigator.mediaDevices.getUserMedia(constraints);
 
+      // Step 2: Initializing camera
+      const step2Message = window.t ? window.t('cameraInitializing') : 'Initializing camera...';
+      updateStartupProgress(2, step2Message);
+      await delay(800);
+
       // Set up video element
       videoPreview.srcObject = stream;
       videoPreview.style.display = 'block';
       previewPlaceholder.style.display = 'none';
+
+      // Wait for video to be ready
+      await new Promise((resolve) => {
+        videoPreview.onloadedmetadata = () => {
+          videoPreview.play();
+          resolve();
+        };
+      });
+
+      // Step 3: Detection ready
+      const step3Message = window.t ? window.t('cameraDetectionReady') : 'Detection ready';
+      updateStartupProgress(3, step3Message);
+      await delay(800);
 
       // Update button states
       isCameraActive = true;
       useCameraBtn.style.display = 'none';
       stopCameraBtn.style.display = 'inline-flex';
 
-      // Hide loading
-      showLoading(false);
+      // Remove startup indicator
+      removeStartupIndicator();
 
-      // Optional: Add success feedback
-      showSuccess('Camera started successfully');
+      // Show recording indicator
+      createRecordingIndicator();
 
       // Dispatch event for detection to start
       document.dispatchEvent(new CustomEvent('cameraStarted'));
@@ -77,12 +271,20 @@
       }
 
       showError(errorMessage);
-      showLoading(false);
+      removeStartupIndicator();
       useCameraBtn.disabled = false;
     }
   }
 
-  // Stop camera
+  // Helper function for delays
+  function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  // ========================================
+  // STOP CAMERA
+  // ========================================
+  
   function stopCamera() {
     if (stream) {
       // Stop all tracks
@@ -102,6 +304,9 @@
     stopCameraBtn.style.display = 'none';
     useCameraBtn.disabled = false;
 
+    // Remove recording indicator
+    removeRecordingIndicator();
+
     // Optional: Add feedback
     showSuccess('Camera stopped');
 
@@ -109,7 +314,10 @@
     document.dispatchEvent(new CustomEvent('cameraStopped'));
   }
 
-  // Show loading state
+  // ========================================
+  // SHOW ERROR/SUCCESS
+  // ========================================
+  
   function showLoading(show) {
     if (show) {
       loadingSpinner.style.display = 'flex';
@@ -120,7 +328,6 @@
     }
   }
 
-  // Show error message
   function showError(message) {
     previewPlaceholder.textContent = message;
     previewPlaceholder.style.display = 'block';
@@ -132,13 +339,14 @@
     }, 5000);
   }
 
-  // Show success message (optional)
   function showSuccess(message) {
-    // You can implement a toast notification here if desired
     console.log('Success:', message);
   }
 
-  // Event Listeners
+  // ========================================
+  // EVENT LISTENERS
+  // ========================================
+  
   useCameraBtn.addEventListener('click', startCamera);
   stopCameraBtn.addEventListener('click', stopCamera);
 
@@ -149,15 +357,14 @@
     }
   });
 
-  // Handle page visibility change (stop camera when tab is hidden)
+  // Handle page visibility change
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && isCameraActive) {
-      // Optionally pause the camera when tab is hidden
       console.log('Page hidden, camera still active');
     }
   });
 
-  // Check camera permissions on load (optional)
+  // Check camera permissions on load
   if (hasGetUserMedia()) {
     navigator.permissions.query({ name: 'camera' }).then((result) => {
       if (result.state === 'granted') {
@@ -169,7 +376,6 @@
         previewPlaceholder.textContent = 'Camera access denied. Please enable camera permissions in your browser settings.';
       }
     }).catch(() => {
-      // Permissions API not supported, that's okay
       console.log('Permissions API not supported');
     });
   } else {
@@ -179,11 +385,13 @@
     useCameraBtn.style.cursor = 'not-allowed';
   }
 
-      // --- Remote camera control API (for Socket.IO) ---
+  // ========================================
+  // REMOTE CAMERA CONTROL API
+  // ========================================
+  
   if (typeof window !== 'undefined') {
     window.remoteCamera = {
       start() {
-        // huwag paulit-ulit kung naka-on na
         if (!isCameraActive) {
           startCamera();
         }
@@ -198,4 +406,54 @@
       }
     };
   }
+
+  // ========================================
+  // ADD CSS ANIMATIONS
+  // ========================================
+  
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+    
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      to {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.9);
+      }
+    }
+    
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.6;
+        transform: scale(0.8);
+      }
+    }
+    
+    #cameraStartupIndicator .startup-steps .step {
+      transition: all 0.3s ease;
+    }
+    
+    #recordingIndicator {
+      transition: all 0.3s ease;
+    }
+  `;
+  document.head.appendChild(style);
+
 })();
