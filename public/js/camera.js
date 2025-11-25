@@ -80,19 +80,19 @@
   // Audio file mapping for startup messages
   const STARTUP_AUDIO_FILES = {
     en: {
-      access: '/audio/startup/en/Access.mp3',
-      initialize: '/audio/startup/en/Initialize.mp3',
-      ready: '/audio/startup/en/Ready.mp3'
+      access: './audio/startup/en/Access.mp3',
+      initialize: './audio/startup/en/Initialize.mp3',
+      ready: './audio/startup/en/Ready.mp3'
     },
     ta: {
-      access: '/audio/startup/ta/Access.mp3',
-      initialize: '/audio/startup/ta/Initialize.mp3',
-      ready: '/audio/startup/ta/Ready.mp3'
+      access: './audio/startup/ta/Access.mp3',
+      initialize: './audio/startup/ta/Initialize.mp3',
+      ready: './audio/startup/ta/Ready.mp3'
     },
     ce: {
-      access: '/audio/startup/ce/Access.mp3',
-      initialize: '/audio/startup/ce/Initialize.mp3',
-      ready: '/audio/startup/ce/Ready.mp3'
+      access: './audio/startup/ce/Access.mp3',
+      initialize: './audio/startup/ce/Initialize.mp3',
+      ready: './audio/startup/ce/Ready.mp3'
     }
   };
 
