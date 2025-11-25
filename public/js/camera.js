@@ -77,52 +77,75 @@
     }
   }
 
-  // Announce message and wait for audio to complete
-  function announceMessage(message) {
+  // Audio file mapping for startup messages
+  const STARTUP_AUDIO_FILES = {
+    en: {
+      access: './audio/startup/en/Access.mp3',
+      initialize: './audio/startup/en/Initialize.mp3',
+      ready: './audio/startup/en/Ready.mp3'
+    },
+    ta: {
+      access: './audio/startup/ta/Access.mp3',
+      initialize: './audio/startup/ta/Initialize.mp3',
+      ready: './audio/startup/ta/Ready.mp3'
+    },
+    ce: {
+      access: './audio/startup/ce/Access.mp3',
+      initialize: './audio/startup/ce/Initialize.mp3',
+      ready: './audio/startup/ce/Ready.mp3'
+    }
+  };
+
+  // Reusable audio element for startup announcements
+  let startupAudio = new Audio();
+
+  // Announce message using pre-recorded MP3 files and wait for completion
+  function announceMessage(step) {
     return new Promise((resolve) => {
-      // If no speech support, just resolve immediately
-      if (!window.speechSynthesis && !window.speak) {
-        setTimeout(resolve, 500); // Small delay for visual effect
+      // Get current language
+      const langCode = window.getCurrentLanguage ? window.getCurrentLanguage() : 'en';
+      
+      // Normalize language code (tl → ta)
+      let normalizedLang = langCode;
+      if (langCode === 'tl') normalizedLang = 'ta';
+      if (langCode === 'ceb') normalizedLang = 'ce';
+      
+      // Map step number to audio file
+      let audioKey = '';
+      if (step === 1) audioKey = 'access';
+      else if (step === 2) audioKey = 'initialize';
+      else if (step === 3) audioKey = 'ready';
+      
+      // Get audio file path
+      const audioFiles = STARTUP_AUDIO_FILES[normalizedLang] || STARTUP_AUDIO_FILES.en;
+      const audioPath = audioFiles[audioKey];
+      
+      if (!audioPath) {
+        // No audio file, just wait a bit
+        setTimeout(resolve, 500);
         return;
       }
 
-      // Check if using TTS (speechSynthesis)
-      if (window.speechSynthesis && window.speak) {
-        // Create a custom utterance to listen for completion
-        const utterance = new SpeechSynthesisUtterance(message);
-        
-        // Get current language
-        const langCode = window.getCurrentLanguage ? window.getCurrentLanguage() : 'en';
-        if (langCode === 'tl' || langCode === 'ta') {
-          utterance.lang = 'fil-PH';
-        } else if (langCode === 'ceb' || langCode === 'ce') {
-          utterance.lang = 'fil-PH';
-        } else {
-          utterance.lang = 'en-US';
-        }
+      // Set up audio
+      startupAudio.src = audioPath;
+      startupAudio.currentTime = 0;
 
-        // Listen for speech end
-        utterance.onend = () => {
-          setTimeout(resolve, 300); // Small buffer after speech
-        };
+      // Listen for audio completion
+      startupAudio.onended = () => {
+        setTimeout(resolve, 300); // Small buffer after audio
+      };
 
-        utterance.onerror = () => {
-          setTimeout(resolve, 500); // Continue even if error
-        };
+      // Handle errors gracefully
+      startupAudio.onerror = () => {
+        console.warn('Audio file not found or failed to load:', audioPath);
+        setTimeout(resolve, 500); // Continue even if audio fails
+      };
 
-        // Cancel any ongoing speech and speak
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.speak(utterance);
-      } else {
-        // Fallback: use window.speak if available
-        if (window.speak) {
-          window.speak(message);
-        }
-        // Estimate speech duration (rough: 150ms per word + base time)
-        const wordCount = message.split(' ').length;
-        const estimatedDuration = Math.max(1000, wordCount * 150 + 500);
-        setTimeout(resolve, estimatedDuration);
-      }
+      // Play audio
+      startupAudio.play().catch(err => {
+        console.warn('Audio play failed:', err);
+        setTimeout(resolve, 500); // Continue even if play fails
+      });
     });
   }
 
@@ -248,7 +271,7 @@
       // Step 1: Requesting camera access
       const step1Message = window.t ? window.t('cameraRequestingAccess') : 'Requesting camera access...';
       updateStartupProgress(1, step1Message);
-      await announceMessage(step1Message);
+      await announceMessage(1); // Pass step number for audio file selection
 
       // Request camera access
       const constraints = {
@@ -265,7 +288,7 @@
       // Step 2: Initializing camera
       const step2Message = window.t ? window.t('cameraInitializing') : 'Initializing camera...';
       updateStartupProgress(2, step2Message);
-      await announceMessage(step2Message);
+      await announceMessage(2); // Pass step number for audio file selection
 
       // Set up video element
       videoPreview.srcObject = stream;
@@ -283,7 +306,7 @@
       // Step 3: Detection ready
       const step3Message = window.t ? window.t('cameraDetectionReady') : 'Detection ready';
       updateStartupProgress(3, step3Message);
-      await announceMessage(step3Message);
+      await announceMessage(3); // Pass step number for audio file selection
 
       // Update button states
       isCameraActive = true;
