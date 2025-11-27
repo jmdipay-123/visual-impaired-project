@@ -281,9 +281,12 @@
           height: { ideal: 720 }
         },
         audio: true
+        
       };
 
       stream = await navigator.mediaDevices.getUserMedia(constraints);
+      videoPreview.srcObject = stream;
+      videoPreview.play();
 
       // Step 2: Initializing camera
       const step2Message = window.t ? window.t('cameraInitializing') : 'Initializing camera...';
