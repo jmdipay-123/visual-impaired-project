@@ -1,338 +1,4 @@
-// === DEBUG MODE ===
-const DEBUG_VOICE = true; // Set to false to disable
-
-function debugLog(message, data) {
-  if (DEBUG_VOICE) {
-    console.log(`[VOICE DEBUG] ${message}`, data || '');
-    
-    // Also show on screen
-    if (typeof showVoiceMessage === 'function') {
-      showVoiceMessage(message, 'info');
-    }
-  }
-}
-
-// Voice Recognition for Language Switching
-(function() {
-  'use strict';
-
-  // ========================================
-  // VOICE RECOGNITION SETUP
-  // ========================================
-  
-  let recognition = null;
-  let isListening = false;
-  let voiceButton = null;
-
-  // Check if browser supports speech recognition
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const isSupported = !!SpeechRecognition;
-
-  // ========================================
-  // LANGUAGE COMMANDS (ALL 3 LANGUAGES)
-  // ========================================
-  
-  const LANGUAGE_COMMANDS = {
-  // English - more variations
-  'change language to english': 'en',
-  'switch to english': 'en',
-  'use english': 'en',
-  'english': 'en',
-  'change to english': 'en',
-  'set language english': 'en',
-  'language english': 'en',
-  
-  // Tagalog - more variations
-  'change language to tagalog': 'tl',
-  'switch to tagalog': 'tl',
-  'use tagalog': 'tl',
-  'tagalog': 'tl',
-  'change to tagalog': 'tl',
-  'set language tagalog': 'tl',
-  'language tagalog': 'tl',
-  
-  // Cebuano - more variations
-  'change language to cebuano': 'ceb',
-  'switch to cebuano': 'ceb',
-  'use cebuano': 'ceb',
-  'cebuano': 'ceb',
-  'change to cebuano': 'ceb',
-  'set language cebuano': 'ceb',
-  'language cebuano': 'ceb',
-  'sebuano': 'ceb', // Common mispronunciation
-  
-  // Tagalog commands (in Tagalog)
-  'ilipat ang wika sa english': 'en',
-  'gamitin ang english': 'en',
-  'ilipat ang wika sa tagalog': 'tl',
-  'gamitin ang tagalog': 'tl',
-  'ilipat ang wika sa cebuano': 'ceb',
-  'gamitin ang cebuano': 'ceb',
-  
-  // Cebuano commands (in Cebuano)
-  'usba ang pinulongan sa english': 'en',
-  'gamita ang english': 'en',
-  'usba ang pinulongan sa tagalog': 'tl',
-  'gamita ang tagalog': 'tl',
-  'usba ang pinulongan sa cebuano': 'ceb',
-  'gamita ang cebuano': 'ceb'
-};
-
-  // ========================================
-  // INITIALIZE VOICE RECOGNITION
-  // ========================================
-  
-  function initializeVoiceRecognition() {
-    if (!isSupported) {
-      console.log('Voice recognition not supported in this browser');
-      return false;
-    }
-
-    recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 3;
-    
-    // Listen in current language
-    const currentLang = window.getCurrentLanguage ? window.getCurrentLanguage() : 'en';
-    setRecognitionLanguage(currentLang);
-
-    // Handle recognition results
-    recognition.onresult = (event) => {
-  const results = event.results[event.results.length - 1];
-  
-  // Check all alternatives for a match
-  for (let i = 0; i < results.length; i++) {
-    const transcript = results[i].transcript.toLowerCase().trim();
-    console.log(`[VOICE INPUT] "${transcript}" (confidence: ${results[i].confidence})`);
-    
-    // Show what was heard
-    showVoiceMessage(`Heard: "${transcript}"`, 'info');
-    
-    const targetLang = matchLanguageCommand(transcript);
-    if (targetLang) {
-      handleLanguageChange(targetLang, transcript);
-      break;
-    } else {
-      console.log('[VOICE] No command matched');
-      // Show "not recognized" message after 1 second
-      setTimeout(() => {
-        showVoiceMessage('Command not recognized', 'error');
-      }, 1000);
-    }
-  }
-};
-
-    // Handle errors
-    recognition.onerror = (event) => {
-      console.log('Voice recognition error:', event.error);
-      
-      if (event.error === 'no-speech') {
-        console.log('No speech detected, continuing...');
-      } else if (event.error === 'not-allowed') {
-        stopListening();
-        showVoiceMessage('Microphone access denied', 'error');
-      } else {
-        console.error('Recognition error:', event.error);
-      }
-    };
-
-    // Handle end of recognition
-    recognition.onend = () => {
-      if (isListening) {
-        // Restart recognition if still supposed to be listening
-        try {
-          recognition.start();
-        } catch (error) {
-          console.log('Recognition restart error:', error);
-        }
-      }
-    };
-
-    console.log('Voice recognition initialized');
-    return true;
-  }
-
-  // ========================================
-  // SET RECOGNITION LANGUAGE
-  // ========================================
-  
-  function setRecognitionLanguage(lang) {
-    if (!recognition) return;
-    
-    // Map language codes to speech recognition codes
-    const langMap = {
-      'en': 'en-US',
-      'tl': 'fil-PH',
-      'ceb': 'ceb-PH'
-    };
-    
-    const recognitionLang = langMap[lang] || 'en-US';
-    recognition.lang = recognitionLang;
-    console.log('Voice recognition language set to:', recognitionLang);
-  }
-
-  // ========================================
-  // MATCH LANGUAGE COMMAND
-  // ========================================
-  
-  function matchLanguageCommand(transcript) {
-  // Clean up transcript
-  const cleanTranscript = transcript.toLowerCase().trim();
-  
-  // Direct match
-  if (LANGUAGE_COMMANDS[cleanTranscript]) {
-    console.log(`[MATCH] Direct: "${cleanTranscript}" -> ${LANGUAGE_COMMANDS[cleanTranscript]}`);
-    return LANGUAGE_COMMANDS[cleanTranscript];
-  }
-  
-  // Partial match - check if transcript contains any command
-  for (const [command, lang] of Object.entries(LANGUAGE_COMMANDS)) {
-    if (cleanTranscript.includes(command)) {
-      console.log(`[MATCH] Partial: "${cleanTranscript}" contains "${command}" -> ${lang}`);
-      return lang;
-    }
-  }
-  
-  // Check if transcript contains language names directly
-  if (cleanTranscript.includes('english') || cleanTranscript.includes('ingles')) {
-    console.log(`[MATCH] Keyword: "english" -> en`);
-    return 'en';
-  }
-  if (cleanTranscript.includes('tagalog')) {
-    console.log(`[MATCH] Keyword: "tagalog" -> tl`);
-    return 'tl';
-  }
-  if (cleanTranscript.includes('cebuano') || cleanTranscript.includes('sebuano') || cleanTranscript.includes('bisaya')) {
-    console.log(`[MATCH] Keyword: "cebuano" -> ceb`);
-    return 'ceb';
-  }
-  
-  console.log(`[NO MATCH] "${cleanTranscript}"`);
-  return null;
-}
-
-  // ========================================
-  // HANDLE LANGUAGE CHANGE
-  // ========================================
-  
-  function handleLanguageChange(targetLang, transcript) {
-  console.log(`[LANGUAGE CHANGE] "${transcript}" → ${targetLang}`);
-  
-  // Show confirmation message
-  showVoiceMessage(`Changing to ${getLanguageName(targetLang)}...`, 'success');
-  
-  // Play confirmation sound
-  playConfirmationSound();
-  
-  // Change language using translations.js function
-  if (window.changeLanguage) {
-    window.changeLanguage(targetLang);
-    
-    // Announce change in the NEW language
-    setTimeout(() => {
-      const message = getLanguageChangedMessage(targetLang);
-      if (window.speak) {
-        window.speak(message);
-      }
-    }, 500);
-    
-    // Update recognition language to match new UI language
-    setRecognitionLanguage(targetLang);
-  }
-}
-
-  // ========================================
-  // HELPER FUNCTIONS
-  // ========================================
-  
-  function getLanguageName(lang) {
-    const names = {
-      'en': 'English',
-      'tl': 'Tagalog',
-      'ceb': 'Cebuano'
-    };
-    return names[lang] || lang;
-  }
-
-  function getLanguageChangedMessage(lang) {
-    const messages = {
-      'en': 'Language changed to English',
-      'tl': 'Nilipat ang wika sa Tagalog',
-      'ceb': 'Giusab ang pinulongan sa Cebuano'
-    };
-    return messages[lang] || 'Language changed';
-  }
-
-  function playConfirmationSound() {
-    // Simple confirmation beep
-    if (window.AudioContext || window.webkitAudioContext) {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.frequency.value = 800;
-      oscillator.type = 'sine';
-      
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-      
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.1);
-    }
-  }
-
-  function showVoiceMessage(message, type = 'info') {
-  // Remove existing message
-  const existingMsg = document.getElementById('voiceMessage');
-  if (existingMsg) {
-    existingMsg.remove();
-  }
-  
-  // Background color
-  const bgColor = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#007bff';
-  
-  // Create message div
-  const msgDiv = document.createElement('div');
-  msgDiv.id = 'voiceMessage';
-  msgDiv.textContent = message;
-  msgDiv.style.position = 'fixed';
-  msgDiv.style.top = '80px';
-  msgDiv.style.left = '50%';
-  msgDiv.style.transform = 'translateX(-50%)';
-  msgDiv.style.padding = '15px 30px';
-  msgDiv.style.background = bgColor;
-  msgDiv.style.color = 'white';
-  msgDiv.style.borderRadius = '8px';
-  msgDiv.style.fontSize = '16px';
-  msgDiv.style.fontWeight = '700';
-  msgDiv.style.zIndex = '99999';
-  msgDiv.style.boxShadow = '0 4px 16px rgba(0,0,0,0.5)';
-  msgDiv.style.maxWidth = '90%';
-  msgDiv.style.textAlign = 'center';
-  msgDiv.style.pointerEvents = 'none';
-  
-  document.body.appendChild(msgDiv);
-  
-  // ALWAYS log to console too
-  console.log(`[VOICE MESSAGE] ${message}`);
-  
-  // Remove after 3 seconds
-  setTimeout(() => {
-    if (msgDiv.parentNode) {
-      msgDiv.remove();
-    }
-  }, 3000);
-}
-
-  // ========================================
-  // START/STOP LISTENING
-  // ========================================
-
-  // Add test function
+// Add test function
 window.testMicrophone = async function() {
   console.log('=== MICROPHONE TEST ===');
   
@@ -363,68 +29,330 @@ window.testMicrophone = async function() {
   }
 };
 
-// Auto-run test on page load (remove after testing)
-if (window.Capacitor) {
-  setTimeout(() => {
-    console.log('Auto-testing microphone...');
-    window.testMicrophone();
-  }, 2000);
-}
-  
-  async function startListening() {
+// Voice Recognition for Language Switching (Hybrid: Web + Native)
+(function() {
+  'use strict';
+
+  let isListening = false;
+  let voiceButton = null;
+  let currentLanguage = 'en-US';
+  let recognition = null; // For Web Speech API
+
+  // === DETECT ENVIRONMENT ===
+  const isNativeAvailable = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SpeechPlugin;
+  const isWebAvailable = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+  const isSupported = isNativeAvailable || isWebAvailable;
+
+  console.log('=== SPEECH RECOGNITION DETECTION ===');
+  console.log('Environment:', window.Capacitor ? 'Mobile App' : 'Web Browser');
+  console.log('Native Android:', isNativeAvailable ? '✅' : '❌');
+  console.log('Web Speech API:', isWebAvailable ? '✅' : '❌');
+  console.log('Will use:', isNativeAvailable ? 'Native Android' : isWebAvailable ? 'Web Speech API' : 'None');
+
   if (!isSupported) {
-    showVoiceMessage('Voice recognition not supported', 'error');
-    return false;
+    console.error('❌ No speech recognition available');
+    return;
   }
-  
-  // DON'T request microphone here - let it happen naturally
-  // The Web Speech API will request it automatically
-  
-  if (!recognition) {
-    const initialized = initializeVoiceRecognition();
-    if (!initialized) return false;
-  }
-  
-  try {
-    recognition.start();
-    isListening = true;
-    updateVoiceButton(true);
+
+  // Language mapping
+  const langMap = {
+    'en': 'en-US',
+    'tl': 'fil-PH',
+    'ceb': 'ceb-PH'
+  };
+
+  // Language commands
+  const LANGUAGE_COMMANDS = {
+    'change language to english': 'en',
+    'switch to english': 'en',
+    'use english': 'en',
+    'english': 'en',
+    'change to english': 'en',
     
-    if (!AUTO_START || voiceButton.classList.contains('listening')) {
-      showVoiceMessage('Listening for voice commands...', 'info');
+    'change language to tagalog': 'tl',
+    'switch to tagalog': 'tl',
+    'use tagalog': 'tl',
+    'tagalog': 'tl',
+    'change to tagalog': 'tl',
+    
+    'change language to cebuano': 'ceb',
+    'switch to cebuano': 'ceb',
+    'use cebuano': 'ceb',
+    'cebuano': 'ceb',
+    'sebuano': 'ceb',
+    'change to cebuano': 'ceb',
+    
+    'ilipat ang wika sa english': 'en',
+    'gamitin ang english': 'en',
+    'ilipat ang wika sa tagalog': 'tl',
+    'gamitin ang tagalog': 'tl',
+    'ilipat ang wika sa cebuano': 'ceb',
+    'gamitin ang cebuano': 'ceb',
+    
+    'usba ang pinulongan sa english': 'en',
+    'gamita ang english': 'en',
+    'usba ang pinulongan sa tagalog': 'tl',
+    'gamita ang tagalog': 'tl',
+    'usba ang pinulongan sa cebuano': 'ceb',
+    'gamita ang cebuano': 'ceb'
+  };
+
+  function matchLanguageCommand(transcript) {
+    const cleanTranscript = transcript.toLowerCase().trim();
+    
+    if (LANGUAGE_COMMANDS[cleanTranscript]) {
+      return LANGUAGE_COMMANDS[cleanTranscript];
     }
     
-    console.log('Voice recognition started');
-    return true;
-  } catch (error) {
-    console.error('Error starting recognition:', error);
-    
-    // Only NOW request microphone if it failed
-    if (error.name === 'not-allowed') {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(track => track.stop());
-        // Try again
-        recognition.start();
-        isListening = true;
-        return true;
-      } catch (micError) {
-        showVoiceMessage('Please allow microphone access', 'error');
-        return false;
+    for (const [command, lang] of Object.entries(LANGUAGE_COMMANDS)) {
+      if (cleanTranscript.includes(command)) {
+        return lang;
       }
     }
     
-    showVoiceMessage('Could not start voice recognition', 'error');
-    return false;
+    if (cleanTranscript.includes('english') || cleanTranscript.includes('ingles')) return 'en';
+    if (cleanTranscript.includes('tagalog')) return 'tl';
+    if (cleanTranscript.includes('cebuano') || cleanTranscript.includes('sebuano') || cleanTranscript.includes('bisaya')) return 'ceb';
+    
+    return null;
   }
-}
 
-  function stopListening() {
+  function getLanguageName(lang) {
+    const names = { 'en': 'English', 'tl': 'Tagalog', 'ceb': 'Cebuano' };
+    return names[lang] || lang;
+  }
+
+  function getLanguageChangedMessage(lang) {
+    const messages = {
+      'en': 'Language changed to English',
+      'tl': 'Nilipat ang wika sa Tagalog',
+      'ceb': 'Giusab ang pinulongan sa Cebuano'
+    };
+    return messages[lang] || 'Language changed';
+  }
+
+  function playConfirmationSound() {
+    if (window.AudioContext || window.webkitAudioContext) {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = 800;
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.1);
+    }
+  }
+
+  function showVoiceMessage(message, type = 'info') {
+    const existingMsg = document.getElementById('voiceMessage');
+    if (existingMsg) existingMsg.remove();
+    
+    const bgColor = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#007bff';
+    
+    const msgDiv = document.createElement('div');
+    msgDiv.id = 'voiceMessage';
+    msgDiv.textContent = message;
+    msgDiv.style.position = 'fixed';
+    msgDiv.style.top = '150px';
+    msgDiv.style.left = '50%';
+    msgDiv.style.transform = 'translateX(-50%)';
+    msgDiv.style.padding = '15px 30px';
+    msgDiv.style.background = bgColor;
+    msgDiv.style.color = 'white';
+    msgDiv.style.borderRadius = '8px';
+    msgDiv.style.fontSize = '16px';
+    msgDiv.style.fontWeight = '700';
+    msgDiv.style.zIndex = '99999';
+    msgDiv.style.boxShadow = '0 4px 16px rgba(0,0,0,0.5)';
+    msgDiv.style.maxWidth = '90%';
+    msgDiv.style.textAlign = 'center';
+    
+    document.body.appendChild(msgDiv);
+    console.log(`[VOICE] ${message}`);
+    
+    setTimeout(() => {
+      if (msgDiv.parentNode) msgDiv.remove();
+    }, 3000);
+  }
+
+  function handleLanguageChange(targetLang, transcript) {
+    console.log(`[LANGUAGE CHANGE] "${transcript}" → ${targetLang}`);
+    showVoiceMessage(`Changing to ${getLanguageName(targetLang)}...`, 'success');
+    playConfirmationSound();
+    
+    if (window.changeLanguage) {
+      window.changeLanguage(targetLang);
+      currentLanguage = langMap[targetLang] || 'en-US';
+      
+      setTimeout(() => {
+        const message = getLanguageChangedMessage(targetLang);
+        if (window.speak) {
+          window.speak(message);
+        }
+      }, 500);
+    }
+  }
+
+  // ========================================
+  // NATIVE SPEECH RECOGNITION (ANDROID APP)
+  // ========================================
+  async function startNativeSpeech() {
+    if (!isNativeAvailable) return;
+
+    try {
+      showVoiceMessage('🎤 Listening...', 'info');
+      isListening = true;
+      updateVoiceButton(true);
+
+      const result = await window.Capacitor.Plugins.SpeechPlugin.startListening({
+        language: currentLanguage
+      });
+
+      console.log('[NATIVE] Heard:', result.transcript);
+      showVoiceMessage(`Heard: "${result.transcript}"`, 'info');
+
+      const targetLang = matchLanguageCommand(result.transcript);
+      if (targetLang) {
+        handleLanguageChange(targetLang, result.transcript);
+      } else {
+        showVoiceMessage('Command not recognized', 'error');
+      }
+
+      setTimeout(() => {
+        if (isListening) {
+          startNativeSpeech();
+        }
+      }, 1000);
+
+    } catch (error) {
+      console.error('[NATIVE] Error:', error);
+      showVoiceMessage('Speech recognition error', 'error');
+      isListening = false;
+      updateVoiceButton(false);
+    }
+  }
+
+  function stopNativeSpeech() {
+    isListening = false;
+    updateVoiceButton(false);
+    showVoiceMessage('Stopped listening', 'info');
+  }
+
+  // ========================================
+  // WEB SPEECH API (WEB BROWSER)
+  // ========================================
+  function initializeWebSpeech() {
+    if (!isWebAvailable) return false;
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 3;
+    recognition.lang = currentLanguage;
+
+    recognition.onresult = (event) => {
+      const results = event.results[event.results.length - 1];
+      
+      for (let i = 0; i < results.length; i++) {
+        const transcript = results[i].transcript.toLowerCase().trim();
+        console.log('[WEB] Heard:', transcript);
+        
+        showVoiceMessage(`Heard: "${transcript}"`, 'info');
+        
+        const targetLang = matchLanguageCommand(transcript);
+        if (targetLang) {
+          handleLanguageChange(targetLang, transcript);
+          break;
+        } else {
+          setTimeout(() => {
+            showVoiceMessage('Command not recognized', 'error');
+          }, 1000);
+        }
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error('[WEB] Error:', event.error);
+      
+      if (event.error === 'no-speech') {
+        console.log('No speech detected, continuing...');
+      } else if (event.error === 'not-allowed') {
+        stopWebSpeech();
+        showVoiceMessage('Microphone access denied', 'error');
+      } else {
+        console.error('Recognition error:', event.error);
+      }
+    };
+
+    recognition.onend = () => {
+      if (isListening) {
+        try {
+          recognition.start();
+        } catch (error) {
+          console.log('Recognition restart error:', error);
+        }
+      }
+    };
+
+    return true;
+  }
+
+  async function startWebSpeech() {
+    if (!isWebAvailable) return;
+
+    if (!recognition) {
+      initializeWebSpeech();
+    }
+
+    try {
+      recognition.start();
+      isListening = true;
+      updateVoiceButton(true);
+      showVoiceMessage('🎤 Listening for commands...', 'info');
+      console.log('[WEB] Voice recognition started');
+    } catch (error) {
+      console.error('[WEB] Error starting:', error);
+      showVoiceMessage('Could not start voice recognition', 'error');
+    }
+  }
+
+  function stopWebSpeech() {
     if (recognition && isListening) {
       recognition.stop();
       isListening = false;
       updateVoiceButton(false);
-      console.log('Voice recognition stopped');
+      showVoiceMessage('Stopped listening', 'info');
+      console.log('[WEB] Voice recognition stopped');
+    }
+  }
+
+  // ========================================
+  // UNIFIED INTERFACE
+  // ========================================
+  function startListening() {
+    if (isNativeAvailable) {
+      console.log('Using Native Android speech');
+      startNativeSpeech();
+    } else if (isWebAvailable) {
+      console.log('Using Web Speech API');
+      startWebSpeech();
+    }
+  }
+
+  function stopListening() {
+    if (isNativeAvailable) {
+      stopNativeSpeech();
+    } else if (isWebAvailable) {
+      stopWebSpeech();
     }
   }
 
@@ -436,10 +364,6 @@ if (window.Capacitor) {
     }
   }
 
-  // ========================================
-  // UPDATE VOICE BUTTON UI
-  // ========================================
-  
   function updateVoiceButton(listening) {
     if (!voiceButton) return;
     
@@ -455,32 +379,14 @@ if (window.Capacitor) {
     }
   }
 
-  // ========================================
-  // CREATE VOICE BUTTON
-  // ========================================
-  
   function createVoiceButton() {
-    if (!isSupported) {
-      console.log('Voice recognition not supported, button not created');
-      return;
-    }
-    
     voiceButton = document.createElement('button');
     voiceButton.id = 'voiceRecognitionBtn';
     voiceButton.className = 'voice-btn';
-    
-    // Show appropriate icon based on auto-start
-    if (AUTO_START) {
-      voiceButton.innerHTML = '<i class="fas fa-microphone"></i>';
-      voiceButton.setAttribute('aria-label', 'Voice commands (always on - click to stop)');
-    } else {
-      voiceButton.innerHTML = '<i class="fas fa-microphone"></i>';
-      voiceButton.setAttribute('aria-label', 'Start voice commands');
-    }
-    
+    voiceButton.innerHTML = '<i class="fas fa-microphone"></i>';
+    voiceButton.setAttribute('aria-label', 'Start voice commands');
     voiceButton.onclick = toggleListening;
     
-    // Add styles
     voiceButton.style.cssText = `
       position: fixed;
       bottom: 30px;
@@ -496,66 +402,34 @@ if (window.Capacitor) {
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
       z-index: 1000;
       transition: all 0.3s ease;
+      display: block;
     `;
     
-    // Add hover effect
     voiceButton.addEventListener('mouseenter', () => {
       voiceButton.style.transform = 'scale(1.1)';
-      voiceButton.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.4)';
     });
     
     voiceButton.addEventListener('mouseleave', () => {
       voiceButton.style.transform = 'scale(1)';
-      voiceButton.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
     });
     
     document.body.appendChild(voiceButton);
-    console.log('Voice button created');
     
-
+    const method = isNativeAvailable ? 'Native Android' : 'Web Speech API';
+    console.log(`✅ Voice button created (${method})`);
   }
 
-  // ========================================
-  // ADD CSS ANIMATIONS
-  // ========================================
-  
   function addStyles() {
     const style = document.createElement('style');
     style.textContent = `
-      @keyframes slideDown {
-        from {
-          opacity: 0;
-          transform: translateX(-50%) translateY(-20px);
-        }
-        to {
-          opacity: 1;
-          transform: translateX(-50%) translateY(0);
-        }
-      }
-      
-      @keyframes slideUp {
-        from {
-          opacity: 1;
-          transform: translateX(-50%) translateY(0);
-        }
-        to {
-          opacity: 0;
-          transform: translateX(-50%) translateY(-20px);
-        }
-      }
-      
-      @keyframes pulse {
-        0%, 100% {
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-        50% {
-          box-shadow: 0 4px 20px rgba(255, 122, 0, 0.6);
-        }
-      }
-      
       .voice-btn.listening {
         background: #dc3545 !important;
         animation: pulse 1.5s infinite;
+      }
+      
+      @keyframes pulse {
+        0%, 100% { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
+        50% { box-shadow: 0 4px 20px rgba(255, 122, 0, 0.6); }
       }
       
       @media (max-width: 768px) {
@@ -571,63 +445,37 @@ if (window.Capacitor) {
     document.head.appendChild(style);
   }
 
-  // ========================================
-  // LISTEN FOR LANGUAGE CHANGES
-  // ========================================
-  
+  // Listen for language changes
   document.addEventListener('languageChanged', (event) => {
     const newLang = event.detail.language;
-    setRecognitionLanguage(newLang);
+    currentLanguage = langMap[newLang] || 'en-US';
+    
+    if (recognition) {
+      recognition.lang = currentLanguage;
+    }
+    
+    console.log('Voice recognition language updated to:', currentLanguage);
   });
 
-  // ========================================
-  // AUTO-START CONFIGURATION
-  // ========================================
-  
-  const AUTO_START = false; // Set to false to require button click
-  
-  // ========================================
-  // INITIALIZE ON PAGE LOAD
-  // ========================================
-  
-  window.addEventListener('DOMContentLoaded', async () => {
+  // Initialize
+  window.addEventListener('DOMContentLoaded', () => {
     addStyles();
     createVoiceButton();
     
-    if (isSupported) {
-      console.log('Voice recognition available');
-      console.log('Voice commands: "Change language to English/Tagalog/Cebuano"');
-      
-      // Auto-start voice recognition if enabled
-      if (AUTO_START) {
-        console.log('Auto-starting voice recognition...');
-        // Wait a bit for page to fully load
-        setTimeout(async () => {
-          const started = await startListening();
-          if (started) {
-            console.log('Voice recognition auto-started successfully');
-          } else {
-            console.log('Voice recognition auto-start failed - click microphone button to retry');
-          }
-        }, 1000);
-      }
-    } else {
-      console.log('Voice recognition not supported in this browser');
-    }
+    const method = isNativeAvailable ? 'Native Android' : isWebAvailable ? 'Web Speech API' : 'None';
+    console.log(`✅ Voice recognition ready (${method})`);
+    
+    setTimeout(() => {
+      showVoiceMessage(`Voice ready! Using ${method}`, 'success');
+    }, 2000);
   });
 
-  // ========================================
-  // CLEANUP ON PAGE UNLOAD
-  // ========================================
-  
+  // Cleanup
   window.addEventListener('beforeunload', () => {
     stopListening();
   });
 
-  // ========================================
-  // EXPOSE PUBLIC API
-  // ========================================
-  
+  // Expose API
   window.voiceRecognition = {
     start: startListening,
     stop: stopListening,
