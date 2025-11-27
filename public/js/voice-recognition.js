@@ -311,44 +311,52 @@ if (window.Capacitor) {
 }
   
   async function startListening() {
-    if (!isSupported) {
-      showVoiceMessage('Voice recognition not supported', 'error');
-      return false;
-    }
-    
-    // Request microphone permission explicitly (especially for mobile)
-    try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-      console.log('Microphone permission granted');
-    } catch (error) {
-      console.error('Microphone permission denied:', error);
-      showVoiceMessage('Please allow microphone access', 'error');
-      return false;
-    }
-    
-    if (!recognition) {
-      const initialized = initializeVoiceRecognition();
-      if (!initialized) return false;
-    }
-    
-    try {
-      recognition.start();
-      isListening = true;
-      updateVoiceButton(true);
-      
-      // Only show message if manually started (not auto-start)
-      if (!AUTO_START || voiceButton.classList.contains('listening')) {
-        showVoiceMessage('Listening for voice commands...', 'info');
-      }
-      
-      console.log('Voice recognition started');
-      return true;
-    } catch (error) {
-      console.error('Error starting recognition:', error);
-      showVoiceMessage('Could not start voice recognition', 'error');
-      return false;
-    }
+  if (!isSupported) {
+    showVoiceMessage('Voice recognition not supported', 'error');
+    return false;
   }
+  
+  // DON'T request microphone here - let it happen naturally
+  // The Web Speech API will request it automatically
+  
+  if (!recognition) {
+    const initialized = initializeVoiceRecognition();
+    if (!initialized) return false;
+  }
+  
+  try {
+    recognition.start();
+    isListening = true;
+    updateVoiceButton(true);
+    
+    if (!AUTO_START || voiceButton.classList.contains('listening')) {
+      showVoiceMessage('Listening for voice commands...', 'info');
+    }
+    
+    console.log('Voice recognition started');
+    return true;
+  } catch (error) {
+    console.error('Error starting recognition:', error);
+    
+    // Only NOW request microphone if it failed
+    if (error.name === 'not-allowed') {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(track => track.stop());
+        // Try again
+        recognition.start();
+        isListening = true;
+        return true;
+      } catch (micError) {
+        showVoiceMessage('Please allow microphone access', 'error');
+        return false;
+      }
+    }
+    
+    showVoiceMessage('Could not start voice recognition', 'error');
+    return false;
+  }
+}
 
   function stopListening() {
     if (recognition && isListening) {
@@ -515,7 +523,7 @@ if (window.Capacitor) {
   // AUTO-START CONFIGURATION
   // ========================================
   
-  const AUTO_START = true; // Set to false to require button click
+  const AUTO_START = false; // Set to false to require button click
   
   // ========================================
   // INITIALIZE ON PAGE LOAD
