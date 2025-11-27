@@ -530,21 +530,9 @@
       window.Capacitor.Plugins.TTSPlugin;
 
     if (isNativeTTS) {
-      // === USE NATIVE ANDROID TTS ===
       console.log('[TTS] Using Native Android TTS');
 
       try {
-        // Map language codes
-        const langMap = {
-          'en': 'en-US',
-          'ta': 'fil-PH', // Tagalog
-          'ce': 'fil-PH'  // Cebuano (fallback to Tagalog if not supported)
-        };
-
-        const language = langMap[langCode] || 'en-US';
-
-        console.log('[TTS] Calling native speak with:', { text, language });
-
         const result = await window.Capacitor.Plugins.TTSPlugin.speak({
           text: text,
           language: language,
@@ -553,22 +541,30 @@
         });
 
         console.log('[TTS] Native speak result:', result);
-        console.log(`[TTS] ✅ Native spoken [${language}]:`, text);
+      } catch (err) {
+        console.error('[TTS] ❌ Native TTS error:', err);
+        console.log('[TTS] TTS not ready, retrying in 500ms...');
 
-      } catch (error) {
-        console.error('[TTS] ❌ Native TTS error:', error);
-        console.error('[TTS] Error details:', JSON.stringify(error));
-
-        // Fallback to web TTS
-        console.log('[TTS] Falling back to Web Speech API');
-        speakWeb(text, langCode);
+        // === retry once after 500ms ===
+        setTimeout(async () => {
+          try {
+            const retry = await window.Capacitor.Plugins.TTSPlugin.speak({
+              text: text,
+              language: language,
+              rate: 1.0,
+              pitch: 1.0
+            });
+            console.log('[TTS] Retry success:', retry);
+          } catch (err2) {
+            console.error('[TTS] ❌ Retry also failed, falling back to Web TTS');
+            speakWeb(text, langCode);
+          }
+        }, 500);
       }
 
-    } else {
-      // === USE WEB SPEECH API ===
-      console.log('[TTS] Native TTS not available, using Web Speech API');
-      speakWeb(text, langCode);
+      return;
     }
+
   }
 
   function speakWeb(text, langCode) {
