@@ -36,34 +36,29 @@ window.testMicrophone = async function() {
   let isListening = false;
   let voiceButton = null;
   let currentLanguage = 'en-US';
-  let recognition = null; // For Web Speech API
-  let commandCooldown = false; // Prevent command spam
+  let recognition = null;
+  let commandCooldown = false;
   let cooldownTimer = null;
 
-  // === DETECT ENVIRONMENT ===
   const isNativeAvailable = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SpeechPlugin;
   const isWebAvailable = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
   const isSupported = isNativeAvailable || isWebAvailable;
 
   console.log('=== SPEECH RECOGNITION DETECTION ===');
-  console.log('Environment:', window.Capacitor ? 'Mobile App' : 'Web Browser');
   console.log('Native Android:', isNativeAvailable ? '✅' : '❌');
   console.log('Web Speech API:', isWebAvailable ? '✅' : '❌');
-  console.log('Will use:', isNativeAvailable ? 'Native Android' : isWebAvailable ? 'Web Speech API' : 'None');
 
   if (!isSupported) {
     console.error('❌ No speech recognition available');
     return;
   }
 
-  // Language mapping
   const langMap = {
     'en': 'en-US',
     'tl': 'fil-PH',
     'ceb': 'ceb-PH'
   };
 
-  // Language commands
   const LANGUAGE_COMMANDS = {
     'change language to english': 'en',
     'switch to english': 'en',
@@ -185,18 +180,16 @@ window.testMicrophone = async function() {
     }, 3000);
   }
 
-  function handleLanguageChange(targetLang, transcript) {
-    // Check if we're in cooldown period
+  async function handleLanguageChange(targetLang, transcript) {
     if (commandCooldown) {
       console.log('[COOLDOWN] Ignoring duplicate command');
       return;
     }
 
-    console.log(`[LANGUAGE CHANGE] "${transcript}" → ${targetLang}`);
+    console.log(`[LANGUAGE CHANGE] "${transcript}" -> ${targetLang}`);
     showVoiceMessage(`Changing to ${getLanguageName(targetLang)}...`, 'success');
     playConfirmationSound();
     
-    // Set cooldown to prevent spam (5 seconds)
     commandCooldown = true;
     if (cooldownTimer) clearTimeout(cooldownTimer);
     cooldownTimer = setTimeout(() => {
@@ -208,25 +201,44 @@ window.testMicrophone = async function() {
       window.changeLanguage(targetLang);
       currentLanguage = langMap[targetLang] || 'en-US';
       
-      // Update recognition language if using web API
       if (recognition) {
         recognition.lang = currentLanguage;
-        console.log('[WEB] Recognition language updated to:', currentLanguage);
       }
       
-      // Announce change in the NEW language
-      setTimeout(() => {
+      // Announce in new language using native TTS
+      setTimeout(async () => {
         const message = getLanguageChangedMessage(targetLang);
-        if (window.speak) {
-          window.speak(message);
+        const language = langMap[targetLang] || 'en-US';
+        
+        console.log('[LANGUAGE CHANGE] Announcing:', message, 'in', language);
+        
+        // Try native TTS first
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.TTSPlugin) {
+          try {
+            console.log('[LANGUAGE CHANGE] Using native TTS');
+            await window.Capacitor.Plugins.TTSPlugin.speak({
+              text: message,
+              language: language,
+              rate: 1.0,
+              pitch: 1.0
+            });
+            console.log('[LANGUAGE CHANGE] ✅ Native TTS spoke');
+          } catch (error) {
+            console.error('[LANGUAGE CHANGE] ❌ Native TTS failed:', error);
+            if (window.speak) {
+              window.speak(message);
+            }
+          }
+        } else {
+          console.log('[LANGUAGE CHANGE] Using window.speak (web)');
+          if (window.speak) {
+            window.speak(message);
+          }
         }
       }, 500);
     }
   }
 
-  // ========================================
-  // NATIVE SPEECH RECOGNITION (ANDROID APP)
-  // ========================================
   async function startNativeSpeech() {
     if (!isNativeAvailable) return;
 
@@ -244,12 +256,11 @@ window.testMicrophone = async function() {
 
       const targetLang = matchLanguageCommand(result.transcript);
       if (targetLang) {
-        handleLanguageChange(targetLang, result.transcript);
+        await handleLanguageChange(targetLang, result.transcript);
       } else {
         showVoiceMessage('Command not recognized', 'error');
       }
 
-      // Continue listening after a delay (only if still active)
       setTimeout(() => {
         if (isListening) {
           startNativeSpeech();
@@ -270,9 +281,6 @@ window.testMicrophone = async function() {
     showVoiceMessage('Stopped listening', 'info');
   }
 
-  // ========================================
-  // WEB SPEECH API (WEB BROWSER)
-  // ========================================
   function initializeWebSpeech() {
     if (!isWebAvailable) return false;
 
@@ -283,7 +291,7 @@ window.testMicrophone = async function() {
     recognition.maxAlternatives = 3;
     recognition.lang = currentLanguage;
 
-    recognition.onresult = (event) => {
+    recognition.onresult = async (event) => {
       const results = event.results[event.results.length - 1];
       
       for (let i = 0; i < results.length; i++) {
@@ -294,8 +302,8 @@ window.testMicrophone = async function() {
         
         const targetLang = matchLanguageCommand(transcript);
         if (targetLang) {
-          handleLanguageChange(targetLang, transcript);
-          break; // Stop processing after first match
+          await handleLanguageChange(targetLang, transcript);
+          break;
         } else {
           setTimeout(() => {
             showVoiceMessage('Command not recognized', 'error');
@@ -322,7 +330,6 @@ window.testMicrophone = async function() {
     recognition.onend = () => {
       console.log('[WEB] Recognition ended');
       
-      // Only restart if we're still supposed to be listening
       if (isListening) {
         console.log('[WEB] Restarting recognition...');
         setTimeout(() => {
@@ -333,7 +340,7 @@ window.testMicrophone = async function() {
               console.log('[WEB] Restart error (already running?):', error);
             }
           }
-        }, 500); // Small delay before restart
+        }, 500);
       }
     };
 
@@ -354,7 +361,6 @@ window.testMicrophone = async function() {
       showVoiceMessage('🎤 Listening for commands...', 'info');
       console.log('[WEB] Voice recognition started');
     } catch (error) {
-      // If already started, just ignore
       if (error.message && error.message.includes('already started')) {
         console.log('[WEB] Already running');
         isListening = true;
@@ -376,9 +382,6 @@ window.testMicrophone = async function() {
     }
   }
 
-  // ========================================
-  // UNIFIED INTERFACE
-  // ========================================
   function startListening() {
     if (isNativeAvailable) {
       console.log('Using Native Android speech');
@@ -456,8 +459,7 @@ window.testMicrophone = async function() {
     
     document.body.appendChild(voiceButton);
     
-    const method = isNativeAvailable ? 'Native Android' : 'Web Speech API';
-    console.log(`✅ Voice button created (${method})`);
+    console.log(`✅ Voice button created`);
   }
 
   function addStyles() {
@@ -486,7 +488,6 @@ window.testMicrophone = async function() {
     document.head.appendChild(style);
   }
 
-  // Listen for language changes
   document.addEventListener('languageChanged', (event) => {
     const newLang = event.detail.language;
     currentLanguage = langMap[newLang] || 'en-US';
@@ -498,25 +499,16 @@ window.testMicrophone = async function() {
     console.log('Voice recognition language updated to:', currentLanguage);
   });
 
-  // Initialize
   window.addEventListener('DOMContentLoaded', () => {
     addStyles();
     createVoiceButton();
-    
-    const method = isNativeAvailable ? 'Native Android' : isWebAvailable ? 'Web Speech API' : 'None';
-    console.log(`✅ Voice recognition ready (${method})`);
-    
-    setTimeout(() => {
-      showVoiceMessage(`Voice ready! Using ${method}`, 'success');
-    }, 2000);
+    console.log(`✅ Voice recognition ready`);
   });
 
-  // Cleanup
   window.addEventListener('beforeunload', () => {
     stopListening();
   });
 
-  // Expose API
   window.voiceRecognition = {
     start: startListening,
     stop: stopListening,
