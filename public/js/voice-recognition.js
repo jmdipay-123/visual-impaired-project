@@ -19,42 +19,50 @@
   // ========================================
   
   const LANGUAGE_COMMANDS = {
-    // English commands
-    'change language to english': 'en',
-    'switch to english': 'en',
-    'use english': 'en',
-    'english': 'en',
-    
-    'change language to tagalog': 'tl',
-    'switch to tagalog': 'tl',
-    'use tagalog': 'tl',
-    'tagalog': 'tl',
-    
-    'change language to cebuano': 'ceb',
-    'switch to cebuano': 'ceb',
-    'use cebuano': 'ceb',
-    'cebuano': 'ceb',
-    
-    // Tagalog commands
-    'ilipat ang wika sa english': 'en',
-    'gamitin ang english': 'en',
-    
-    'ilipat ang wika sa tagalog': 'tl',
-    'gamitin ang tagalog': 'tl',
-    
-    'ilipat ang wika sa cebuano': 'ceb',
-    'gamitin ang cebuano': 'ceb',
-    
-    // Cebuano commands
-    'usba ang pinulongan sa english': 'en',
-    'gamita ang english': 'en',
-    
-    'usba ang pinulongan sa tagalog': 'tl',
-    'gamita ang tagalog': 'tl',
-    
-    'usba ang pinulongan sa cebuano': 'ceb',
-    'gamita ang cebuano': 'ceb'
-  };
+  // English - more variations
+  'change language to english': 'en',
+  'switch to english': 'en',
+  'use english': 'en',
+  'english': 'en',
+  'change to english': 'en',
+  'set language english': 'en',
+  'language english': 'en',
+  
+  // Tagalog - more variations
+  'change language to tagalog': 'tl',
+  'switch to tagalog': 'tl',
+  'use tagalog': 'tl',
+  'tagalog': 'tl',
+  'change to tagalog': 'tl',
+  'set language tagalog': 'tl',
+  'language tagalog': 'tl',
+  
+  // Cebuano - more variations
+  'change language to cebuano': 'ceb',
+  'switch to cebuano': 'ceb',
+  'use cebuano': 'ceb',
+  'cebuano': 'ceb',
+  'change to cebuano': 'ceb',
+  'set language cebuano': 'ceb',
+  'language cebuano': 'ceb',
+  'sebuano': 'ceb', // Common mispronunciation
+  
+  // Tagalog commands (in Tagalog)
+  'ilipat ang wika sa english': 'en',
+  'gamitin ang english': 'en',
+  'ilipat ang wika sa tagalog': 'tl',
+  'gamitin ang tagalog': 'tl',
+  'ilipat ang wika sa cebuano': 'ceb',
+  'gamitin ang cebuano': 'ceb',
+  
+  // Cebuano commands (in Cebuano)
+  'usba ang pinulongan sa english': 'en',
+  'gamita ang english': 'en',
+  'usba ang pinulongan sa tagalog': 'tl',
+  'gamita ang tagalog': 'tl',
+  'usba ang pinulongan sa cebuano': 'ceb',
+  'gamita ang cebuano': 'ceb'
+};
 
   // ========================================
   // INITIALIZE VOICE RECOGNITION
@@ -76,21 +84,30 @@
     setRecognitionLanguage(currentLang);
 
     // Handle recognition results
-    recognition.onresult = (event) => {
-      const results = event.results[event.results.length - 1];
-      
-      // Check all alternatives for a match
-      for (let i = 0; i < results.length; i++) {
-        const transcript = results[i].transcript.toLowerCase().trim();
-        console.log('Voice input:', transcript);
-        
-        const targetLang = matchLanguageCommand(transcript);
-        if (targetLang) {
-          handleLanguageChange(targetLang, transcript);
-          break;
-        }
-      }
-    };
+  recognition.onresult = (event) => {
+  const results = event.results[event.results.length - 1];
+  
+  // Check all alternatives for a match
+  for (let i = 0; i < results.length; i++) {
+    const transcript = results[i].transcript.toLowerCase().trim();
+    console.log(`[VOICE INPUT] "${transcript}" (confidence: ${results[i].confidence})`);
+    
+    // Show what was heard
+    showVoiceMessage(`Heard: "${transcript}"`, 'info');
+    
+    const targetLang = matchLanguageCommand(transcript);
+    if (targetLang) {
+      handleLanguageChange(targetLang, transcript);
+      break;
+    } else {
+      console.log('[VOICE] No command matched');
+      // Show "not recognized" message after 1 second
+      setTimeout(() => {
+        showVoiceMessage('Command not recognized', 'error');
+      }, 1000);
+    }
+  }
+};
 
     // Handle errors
     recognition.onerror = (event) => {
@@ -235,83 +252,50 @@
   }
 
   function showVoiceMessage(message, type = 'info') {
+  // Remove existing message
   const existingMsg = document.getElementById('voiceMessage');
   if (existingMsg) {
     existingMsg.remove();
   }
   
+  // Background color
+  const bgColor = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#007bff';
+  
+  // Create message div
   const msgDiv = document.createElement('div');
   msgDiv.id = 'voiceMessage';
   msgDiv.textContent = message;
-  
-  // Background color based on type
-  const bgColor = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#007bff';
-  
-  msgDiv.style.cssText = `
-    position: fixed;
-    top: 80px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 12px 24px;
-    background: ${bgColor};
-    color: white;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    z-index: 9999;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    animation: slideDown 0.3s ease;
-    max-width: 90%;
-    text-align: center;
-  `;
+  msgDiv.style.position = 'fixed';
+  msgDiv.style.top = '80px';
+  msgDiv.style.left = '50%';
+  msgDiv.style.transform = 'translateX(-50%)';
+  msgDiv.style.padding = '15px 30px';
+  msgDiv.style.background = bgColor;
+  msgDiv.style.color = 'white';
+  msgDiv.style.borderRadius = '8px';
+  msgDiv.style.fontSize = '16px';
+  msgDiv.style.fontWeight = '700';
+  msgDiv.style.zIndex = '99999';
+  msgDiv.style.boxShadow = '0 4px 16px rgba(0,0,0,0.5)';
+  msgDiv.style.maxWidth = '90%';
+  msgDiv.style.textAlign = 'center';
+  msgDiv.style.pointerEvents = 'none';
   
   document.body.appendChild(msgDiv);
   
-  console.log('[voice-message]', message); // Also log to console
+  // ALWAYS log to console too
+  console.log(`[VOICE MESSAGE] ${message}`);
   
-  // Auto-remove after 2 seconds
+  // Remove after 3 seconds
   setTimeout(() => {
-    if (msgDiv && msgDiv.parentNode) {
-      msgDiv.style.animation = 'slideUp 0.3s ease';
-      setTimeout(() => msgDiv.remove(), 300);
+    if (msgDiv.parentNode) {
+      msgDiv.remove();
     }
-  }, 2000);
+  }, 3000);
 }
-
   // ========================================
   // START/STOP LISTENING
   // ========================================
-
-  // Add test function
-window.testMicrophone = async function() {
-  console.log('=== MICROPHONE TEST ===');
-  
-  try {
-    console.log('Requesting microphone...');
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    
-    console.log('✅ SUCCESS! Microphone granted');
-    console.log('Stream:', stream);
-    console.log('Tracks:', stream.getTracks());
-    
-    // Stop the stream
-    stream.getTracks().forEach(track => {
-      console.log('Track:', track.label, 'Enabled:', track.enabled);
-      track.stop();
-    });
-    
-    alert('✅ MICROPHONE WORKS!');
-    return true;
-    
-  } catch (error) {
-    console.error('❌ FAILED');
-    console.error('Error name:', error.name);
-    console.error('Error message:', error.message);
-    
-    alert('❌ FAILED: ' + error.name + '\n' + error.message);
-    return false;
-  }
-};
 
 // Auto-run test on page load (remove after testing)
 if (window.Capacitor) {
