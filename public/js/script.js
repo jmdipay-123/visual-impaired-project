@@ -506,143 +506,188 @@
   }
 
 
-  // ========================================
-  // HYBRID TEXT-TO-SPEECH (Native + Web)
-  // ========================================
+// ========================================
+// HYBRID TEXT-TO-SPEECH (Native + Web) - FIXED
+// ========================================
 
-  async function speak(text) {
-    if (!text) return;
+// Track if voices are loaded
+let voicesLoaded = false;
 
-    const langCode = getCurrentLanguageCode(); // 'en', 'ta', or 'ce'
-
-    console.log('[TTS] speak() called');
-    console.log('[TTS] Text:', text);
-    console.log('[TTS] Language:', langCode);
-
-    // Check if Capacitor is available
-    console.log('[TTS] Capacitor available?', !!window.Capacitor);
-    console.log('[TTS] Capacitor.Plugins available?', !!(window.Capacitor && window.Capacitor.Plugins));
-    console.log('[TTS] TTSPlugin available?', !!(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.TTSPlugin));
-
-    // Check if native TTS is available (Capacitor app)
-    const isNativeTTS = window.Capacitor &&
-      window.Capacitor.Plugins &&
-      window.Capacitor.Plugins.TTSPlugin;
-
-    if (isNativeTTS) {
-      console.log('[TTS] Using Native Android TTS');
-
-      try {
-        const result = await window.Capacitor.Plugins.TTSPlugin.speak({
-          text: text,
-          language: language,
-          rate: 1.0,
-          pitch: 1.0
-        });
-
-        console.log('[TTS] Native speak result:', result);
-      } catch (err) {
-        console.error('[TTS] ❌ Native TTS error:', err);
-        console.log('[TTS] TTS not ready, retrying in 500ms...');
-
-        // === retry once after 500ms ===
-        setTimeout(async () => {
-          try {
-            const retry = await window.Capacitor.Plugins.TTSPlugin.speak({
-              text: text,
-              language: language,
-              rate: 1.0,
-              pitch: 1.0
-            });
-            console.log('[TTS] Retry success:', retry);
-          } catch (err2) {
-            console.error('[TTS] ❌ Retry also failed, falling back to Web TTS');
-            speakWeb(text, langCode);
-          }
-        }, 500);
-      }
-
-      return;
-    }
-
+// Load voices on page load
+if ('speechSynthesis' in window) {
+  // Load voices immediately if available
+  if (window.speechSynthesis.getVoices().length > 0) {
+    voicesLoaded = true;
+    console.log('[TTS] Voices already loaded');
   }
+  
+  // Listen for voices changed event
+  window.speechSynthesis.onvoiceschanged = () => {
+    voicesLoaded = true;
+    console.log('[TTS] Voices loaded:', window.speechSynthesis.getVoices().length);
+  };
+}
 
-  function speakWeb(text, langCode) {
-    if (!('speechSynthesis' in window)) {
-      console.log('[TTS] ❌ Text-to-speech not supported:', text);
-      return;
+async function speak(text) {
+  if (!text) return;
+  
+  const langCode = getCurrentLanguageCode(); // 'en', 'ta', or 'ce'
+  
+  console.log('[TTS] speak() called');
+  console.log('[TTS] Text:', text);
+  console.log('[TTS] Language:', langCode);
+  
+  // Check if native TTS is available (Capacitor app)
+  const isNativeTTS = window.Capacitor && 
+                      window.Capacitor.Plugins && 
+                      window.Capacitor.Plugins.TTSPlugin;
+  
+  if (isNativeTTS) {
+    // === USE NATIVE ANDROID TTS ===
+    console.log('[TTS] Using Native Android TTS');
+    
+    try {
+      const langMap = {
+        'en': 'en-US',
+        'ta': 'fil-PH',
+        'ce': 'fil-PH'
+      };
+      
+      const language = langMap[langCode] || 'en-US';
+      
+      await window.Capacitor.Plugins.TTSPlugin.speak({
+        text: text,
+        language: language,
+        rate: 1.0,
+        pitch: 1.0
+      });
+      
+      console.log(`[TTS] ✅ Native spoken [${language}]:`, text);
+      
+    } catch (error) {
+      console.error('[TTS] ❌ Native TTS error:', error);
+      speakWeb(text, langCode);
     }
-
+    
+  } else {
+    // === USE WEB SPEECH API ===
     console.log('[TTS] Using Web Speech API');
-
-    // Cancel any ongoing speech
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-
-    // Basic rate/pitch/volume
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
-
-    // Choose language code for the utterance
-    if (langCode === 'ta') {
-      utterance.lang = 'fil-PH'; // Tagalog / Filipino
-    } else if (langCode === 'ce') {
-      // Many browsers don't have a Cebuano voice; use Filipino if not available
-      utterance.lang = 'fil-PH';
-    } else {
-      utterance.lang = 'en-US';
-    }
-
-    // Try to pick an actual matching voice
-    const voice = pickVoiceForLanguage(langCode);
-    if (voice) {
-      utterance.voice = voice;
-      console.log('[TTS] Using voice:', voice.name, voice.lang);
-    }
-
-    // Add event handlers for debugging
-    utterance.onstart = () => {
-      console.log('[TTS] ▶️ Speech started');
-    };
-
-    utterance.onend = () => {
-      console.log('[TTS] ✅ Speech ended');
-    };
-
-    utterance.onerror = (event) => {
-      console.error('[TTS] ❌ Speech error:', event.error);
-    };
-
-    window.speechSynthesis.speak(utterance);
-    console.log(`[TTS] Web spoken [${utterance.lang}]:`, text);
+    speakWeb(text, langCode);
   }
+}
 
-  // Helper: pick an appropriate voice for the language
-  function pickVoiceForLanguage(langCode) {
-    const voices = window.speechSynthesis.getVoices();
-    if (!voices || !voices.length) return null;
+function speakWeb(text, langCode) {
+  if (!('speechSynthesis' in window)) {
+    console.log('[TTS] ❌ Text-to-speech not supported');
+    return;
+  }
+  
+  console.log('[TTS] Web TTS - voicesLoaded:', voicesLoaded);
+  
+  // Wait for voices to load if needed
+  if (!voicesLoaded) {
+    console.log('[TTS] ⏳ Waiting for voices to load...');
+    
+    // Trigger voice loading
+    window.speechSynthesis.getVoices();
+    
+    // Wait a bit for voices to load
+    setTimeout(() => {
+      speakWebNow(text, langCode);
+    }, 100);
+    
+    return;
+  }
+  
+  speakWebNow(text, langCode);
+}
 
-    const prefsByLang = {
-      en: ['en-PH', 'en-US', 'en-GB'],
-      ta: ['fil-PH', 'tl-PH', 'en-PH'],
-      ce: ['ceb', 'fil-PH', 'tl-PH', 'en-PH']
-    };
+function speakWebNow(text, langCode) {
+  console.log('[TTS] Speaking with Web Speech API');
+  
+  // Cancel any ongoing speech
+  window.speechSynthesis.cancel();
+  
+  const utterance = new SpeechSynthesisUtterance(text);
+  
+  // Basic rate/pitch/volume
+  utterance.rate = 1.0;
+  utterance.pitch = 1.0;
+  utterance.volume = 1.0;
+  
+  // Choose language code for the utterance
+  if (langCode === 'ta') {
+    utterance.lang = 'fil-PH';
+  } else if (langCode === 'ce') {
+    utterance.lang = 'fil-PH';
+  } else {
+    utterance.lang = 'en-US';
+  }
+  
+  // Try to pick an actual matching voice
+  const voice = pickVoiceForLanguage(langCode);
+  if (voice) {
+    utterance.voice = voice;
+    console.log('[TTS] Using voice:', voice.name, voice.lang);
+  } else {
+    console.log('[TTS] ⚠️ No matching voice found, using default');
+  }
+  
+  // Add event handlers
+  utterance.onstart = () => {
+    console.log('[TTS] ▶️ Speech started');
+  };
+  
+  utterance.onend = () => {
+    console.log('[TTS] ✅ Speech ended');
+  };
+  
+  utterance.onerror = (event) => {
+    console.error('[TTS] ❌ Speech error:', event.error);
+  };
+  
+  window.speechSynthesis.speak(utterance);
+  console.log(`[TTS] Web TTS speaking [${utterance.lang}]:`, text);
+}
 
-    const prefs = prefsByLang[langCode] || prefsByLang.en;
-
-    for (const pref of prefs) {
-      const v = voices.find(voice =>
-        voice.lang.toLowerCase().startsWith(pref.toLowerCase())
-      );
-      if (v) return v;
-    }
+function pickVoiceForLanguage(langCode) {
+  const voices = window.speechSynthesis.getVoices();
+  
+  console.log('[TTS] Available voices:', voices.length);
+  
+  if (!voices || voices.length === 0) {
+    console.log('[TTS] ⚠️ No voices available');
     return null;
   }
+  
+  const prefsByLang = {
+    en: ['en-PH', 'en-US', 'en-GB'],
+    ta: ['fil-PH', 'tl-PH', 'en-PH'],
+    ce: ['ceb', 'fil-PH', 'tl-PH', 'en-PH']
+  };
+  
+  const prefs = prefsByLang[langCode] || prefsByLang.en;
+  
+  console.log('[TTS] Looking for voice with lang:', prefs);
+  
+  for (const pref of prefs) {
+    const v = voices.find(voice =>
+      voice.lang.toLowerCase().startsWith(pref.toLowerCase())
+    );
+    if (v) {
+      console.log('[TTS] ✅ Found voice:', v.name, v.lang);
+      return v;
+    }
+  }
+  
+  console.log('[TTS] ⚠️ No matching voice found');
+  return null;
+}
 
-  // Export globally
-  window.speak = speak;
+// Export globally
+window.speak = speak;
+
+console.log('[TTS] TTS system initialized');
 
   // Add a test function for TTS
   window.testTTS = async function () {
