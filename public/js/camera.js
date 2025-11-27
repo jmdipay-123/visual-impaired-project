@@ -1,3 +1,17 @@
+import { Permissions } from '@capacitor/core';
+
+async function enableMic() {
+    const micPermission = await Permissions.request({ name: 'microphone' });
+    if (micPermission.microphone.state === 'granted') {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        console.log('Microphone stream ready', stream);
+        // attach stream to audio processing
+    } else {
+        alert('Microphone permission denied');
+    }
+}
+
+
 // Camera Control Script
 (function() {
   'use strict';
@@ -258,90 +272,71 @@
   // ========================================
   
   async function startCamera() {
-    if (!hasGetUserMedia()) {
-      showError('Camera is not supported by your browser');
+  if (!hasGetUserMedia()) {
+    showError('Camera is not supported by your browser');
+    return;
+  }
+
+  try {
+    // Create startup indicator
+    createStartupIndicator();
+    useCameraBtn.disabled = true;
+
+    // Step 1: Request permissions
+    const step1Message = window.t ? window.t('cameraRequestingAccess') : 'Requesting camera and microphone access...';
+    updateStartupProgress(1, step1Message);
+    await announceMessage(1);
+
+    // Request microphone permission
+    const micPermission = await Permissions.request({ name: 'microphone' });
+    if (micPermission.microphone.state !== 'granted') {
+      showError('Microphone permission denied');
+      removeStartupIndicator();
+      useCameraBtn.disabled = false;
       return;
     }
 
-    try {
-      // Create startup indicator
-      createStartupIndicator();
-      useCameraBtn.disabled = true;
+    // Step 2: Request camera access
+    const step2Message = window.t ? window.t('cameraInitializing') : 'Initializing camera...';
+    updateStartupProgress(2, step2Message);
+    await announceMessage(2);
 
-      // Step 1: Requesting camera access
-      const step1Message = window.t ? window.t('cameraRequestingAccess') : 'Requesting camera access...';
-      updateStartupProgress(1, step1Message);
-      await announceMessage(1); // Pass step number for audio file selection
+    const constraints = {
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: true  // Enable audio stream
+    };
 
-      // Request camera access
-      const constraints = {
-        video: {
-          facingMode: 'environment', // Use back camera on mobile
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
-        audio: false
-      };
+    stream = await navigator.mediaDevices.getUserMedia(constraints);
 
-      stream = await navigator.mediaDevices.getUserMedia(constraints);
+    // Set up video element
+    videoPreview.srcObject = stream;
+    videoPreview.style.display = 'block';
+    previewPlaceholder.style.display = 'none';
 
-      // Step 2: Initializing camera
-      const step2Message = window.t ? window.t('cameraInitializing') : 'Initializing camera...';
-      updateStartupProgress(2, step2Message);
-      await announceMessage(2); // Pass step number for audio file selection
+    await new Promise(resolve => { videoPreview.onloadedmetadata = () => { videoPreview.play(); resolve(); }; });
 
-      // Set up video element
-      videoPreview.srcObject = stream;
-      videoPreview.style.display = 'block';
-      previewPlaceholder.style.display = 'none';
+    // Step 3: Ready
+    const step3Message = window.t ? window.t('cameraDetectionReady') : 'Detection ready';
+    updateStartupProgress(3, step3Message);
+    await announceMessage(3);
 
-      // Wait for video to be ready
-      await new Promise((resolve) => {
-        videoPreview.onloadedmetadata = () => {
-          videoPreview.play();
-          resolve();
-        };
-      });
+    isCameraActive = true;
+    useCameraBtn.style.display = 'none';
+    stopCameraBtn.style.display = 'inline-flex';
 
-      // Step 3: Detection ready
-      const step3Message = window.t ? window.t('cameraDetectionReady') : 'Detection ready';
-      updateStartupProgress(3, step3Message);
-      await announceMessage(3); // Pass step number for audio file selection
+    removeStartupIndicator();
+    createRecordingIndicator();
 
-      // Update button states
-      isCameraActive = true;
-      useCameraBtn.style.display = 'none';
-      stopCameraBtn.style.display = 'inline-flex';
+    document.dispatchEvent(new CustomEvent('cameraStarted'));
 
-      // Remove startup indicator
-      removeStartupIndicator();
-
-      // Show recording indicator
-      createRecordingIndicator();
-
-      // Dispatch event for detection to start
-      document.dispatchEvent(new CustomEvent('cameraStarted'));
-
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-      
-      let errorMessage = 'Failed to access camera';
-      
-      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-        errorMessage = 'Camera access denied. Please allow camera permissions.';
-      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-        errorMessage = 'No camera found on this device.';
-      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
-        errorMessage = 'Camera is already in use by another application.';
-      } else if (error.name === 'OverconstrainedError') {
-        errorMessage = 'Camera does not meet the required constraints.';
-      }
-
-      showError(errorMessage);
-      removeStartupIndicator();
-      useCameraBtn.disabled = false;
-    }
+  } catch (error) {
+    console.error('Error accessing camera/microphone:', error);
+    showError('Failed to access camera or microphone. Make sure permissions are granted and no other app is using the camera.');
+    removeStartupIndicator();
+    useCameraBtn.disabled = false;
   }
+}
+
 
   // Helper function for delays
   function delay(ms) {
