@@ -271,57 +271,45 @@
   // START/STOP LISTENING
   // ========================================
   
- async function startListening() {
-  if (!isSupported) {
-    showVoiceMessage('Voice recognition not supported', 'error');
-    return false;
-  }
-  
-  // Request microphone permission explicitly
-  try {
-    console.log('Requesting microphone access...');
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    console.log('✅ Microphone access granted');
-    
-    // Stop the test stream
-    stream.getTracks().forEach(track => track.stop());
-  } catch (error) {
-    console.error('❌ Microphone access denied:', error);
-    
-    if (error.name === 'NotAllowedError') {
-      showVoiceMessage('Microphone permission denied. Please enable in settings.', 'error');
-    } else if (error.name === 'NotFoundError') {
-      showVoiceMessage('No microphone found on device.', 'error');
-    } else {
-      showVoiceMessage('Could not access microphone: ' + error.message, 'error');
-    }
-    return false;
-  }
-  
-  // ... rest of your existing startListening code ...
-  
-  if (!recognition) {
-    const initialized = initializeVoiceRecognition();
-    if (!initialized) return false;
-  }
-  
-  try {
-    recognition.start();
-    isListening = true;
-    updateVoiceButton(true);
-    
-    if (!AUTO_START || voiceButton.classList.contains('listening')) {
-      showVoiceMessage('Listening for voice commands...', 'info');
+  async function startListening() {
+    if (!isSupported) {
+      showVoiceMessage('Voice recognition not supported', 'error');
+      return false;
     }
     
-    console.log('Voice recognition started');
-    return true;
-  } catch (error) {
-    console.error('Error starting recognition:', error);
-    showVoiceMessage('Could not start voice recognition', 'error');
-    return false;
+    // Request microphone permission explicitly (especially for mobile)
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('Microphone permission granted');
+    } catch (error) {
+      console.error('Microphone permission denied:', error);
+      showVoiceMessage('Please allow microphone access', 'error');
+      return false;
+    }
+    
+    if (!recognition) {
+      const initialized = initializeVoiceRecognition();
+      if (!initialized) return false;
+    }
+    
+    try {
+      recognition.start();
+      isListening = true;
+      updateVoiceButton(true);
+      
+      // Only show message if manually started (not auto-start)
+      if (!AUTO_START || voiceButton.classList.contains('listening')) {
+        showVoiceMessage('Listening for voice commands...', 'info');
+      }
+      
+      console.log('Voice recognition started');
+      return true;
+    } catch (error) {
+      console.error('Error starting recognition:', error);
+      showVoiceMessage('Could not start voice recognition', 'error');
+      return false;
+    }
   }
-}
 
   function stopListening() {
     if (recognition && isListening) {
@@ -494,51 +482,31 @@
   // INITIALIZE ON PAGE LOAD
   // ========================================
   
-window.addEventListener('DOMContentLoaded', async () => {
-  addStyles();
-  createVoiceButton();
-  
-  if (isSupported) {
-    console.log('Voice recognition available');
-    console.log('Voice commands: "Change language to English/Tagalog/Cebuano"');
+  window.addEventListener('DOMContentLoaded', async () => {
+    addStyles();
+    createVoiceButton();
     
-    // Auto-start voice recognition if enabled
-    if (AUTO_START) {
-      console.log('Auto-starting voice recognition...');
+    if (isSupported) {
+      console.log('Voice recognition available');
+      console.log('Voice commands: "Change language to English/Tagalog/Cebuano"');
       
-      // === FIX: Wait for camera startup to complete before starting voice ===
-      // Check if camera is starting up (audio playing)
-      let cameraStartupComplete = false;
-      
-      // Listen for camera startup complete event
-      document.addEventListener('cameraStartupComplete', () => {
-        cameraStartupComplete = true;
-      });
-      
-      // Wait 8 seconds (enough for camera startup audio to finish)
-      setTimeout(async () => {
-        // Only start if camera startup is done OR if no camera startup happened
-        if (cameraStartupComplete || !document.getElementById('useCameraBtn')) {
+      // Auto-start voice recognition if enabled
+      if (AUTO_START) {
+        console.log('Auto-starting voice recognition...');
+        // Wait a bit for page to fully load
+        setTimeout(async () => {
           const started = await startListening();
           if (started) {
             console.log('Voice recognition auto-started successfully');
-            // Don't show message since it's auto-start
           } else {
             console.log('Voice recognition auto-start failed - click microphone button to retry');
           }
-        } else {
-          console.log('Waiting for camera startup to complete...');
-          // Try again after camera startup
-          document.addEventListener('cameraStartupComplete', async () => {
-            await startListening();
-          }, { once: true });
-        }
-      }, 8000); // 8 seconds delay
+        }, 1000);
+      }
+    } else {
+      console.log('Voice recognition not supported in this browser');
     }
-  } else {
-    console.log('Voice recognition not supported in this browser');
-  }
-});
+  });
 
   // ========================================
   // CLEANUP ON PAGE UNLOAD
