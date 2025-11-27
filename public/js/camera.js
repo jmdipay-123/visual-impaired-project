@@ -256,21 +256,6 @@
   // ========================================
   // REQUEST CAMERA ACCESS
   // ========================================
-
-  async function requestMobilePermissions() {
-  if (Capacitor.getPlatform() !== 'android') return;
-
-  const { Permissions } = Capacitor.Plugins;
-
-  try {
-    await Permissions.request({
-      permissions: ['camera', 'microphone']
-    });
-  } catch (err) {
-    console.error('Permission request error:', err);
-  }
-}
-
   
   async function startCamera() {
     if (!hasGetUserMedia()) {
@@ -288,8 +273,6 @@
       updateStartupProgress(1, step1Message);
       await announceMessage(1); // Pass step number for audio file selection
 
-      await requestMobilePermissions();
-
       // Request camera access
       const constraints = {
         video: {
@@ -297,7 +280,7 @@
           width: { ideal: 1280 },
           height: { ideal: 720 }
         },
-        audio: True
+        audio: false
       };
 
       stream = await navigator.mediaDevices.getUserMedia(constraints);
