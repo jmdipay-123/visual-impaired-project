@@ -282,6 +282,37 @@
   // START/STOP LISTENING
   // ========================================
 
+  // Add test function
+window.testMicrophone = async function() {
+  console.log('=== MICROPHONE TEST ===');
+  
+  try {
+    console.log('Requesting microphone...');
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    
+    console.log('✅ SUCCESS! Microphone granted');
+    console.log('Stream:', stream);
+    console.log('Tracks:', stream.getTracks());
+    
+    // Stop the stream
+    stream.getTracks().forEach(track => {
+      console.log('Track:', track.label, 'Enabled:', track.enabled);
+      track.stop();
+    });
+    
+    
+    return true;
+    
+  } catch (error) {
+    console.error('❌ FAILED');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    
+    alert('❌ FAILED: ' + error.name + '\n' + error.message);
+    return false;
+  }
+};
+
 // Auto-run test on page load (remove after testing)
 if (window.Capacitor) {
   setTimeout(() => {
