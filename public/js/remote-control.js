@@ -1,3 +1,41 @@
+function handleLanguageChange(targetLang, transcript) {
+  console.log(`[LANGUAGE CHANGE] "${transcript}" → ${targetLang}`);
+  showVoiceMessage(`Changing to ${getLanguageName(targetLang)}...`, 'success');
+  playConfirmationSound();
+  
+  if (window.changeLanguage) {
+    window.changeLanguage(targetLang);
+    
+    // Announce change in the NEW language using native TTS
+    setTimeout(() => {
+      const messages = {
+        'en': 'Language changed to English',
+        'tl': 'Nilipat ang wika sa Tagalog',
+        'ceb': 'Giusab ang pinulongan sa Cebuano'
+      };
+      
+      const message = messages[targetLang] || 'Language changed';
+      
+      if (window.speak) {
+        window.speak(message);
+      }
+    }, 500);
+    
+    // Update TTS language if using native
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.TTSPlugin) {
+      const langMap = {
+        'en': 'en-US',
+        'tl': 'fil-PH',
+        'ceb': 'fil-PH'
+      };
+      
+      window.Capacitor.Plugins.TTSPlugin.setLanguage({
+        language: langMap[targetLang] || 'en-US'
+      });
+    }
+  }
+}
+
 // === Pairing Code Generator ===
 function generatePairingCode() {
   const prefix = "CANE-";

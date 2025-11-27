@@ -531,43 +531,116 @@
     return null;
   }
 
-  function speak(text) {
-    if (!('speechSynthesis' in window)) {
-      console.log('Text-to-speech not supported:', text);
-      return;
+  // ========================================
+// HYBRID TEXT-TO-SPEECH (Native + Web)
+// ========================================
+
+async function speak(text) {
+  if (!text) return;
+  
+  const langCode = getCurrentLanguageCode(); // 'en', 'ta', or 'ce'
+  
+  // Check if native TTS is available (Capacitor app)
+  const isNativeTTS = window.Capacitor && 
+                      window.Capacitor.Plugins && 
+                      window.Capacitor.Plugins.TTSPlugin;
+  
+  if (isNativeTTS) {
+    // === USE NATIVE ANDROID TTS ===
+    console.log('[TTS] Using Native Android TTS');
+    
+    try {
+      // Map language codes
+      const langMap = {
+        'en': 'en-US',
+        'ta': 'fil-PH', // Tagalog
+        'ce': 'fil-PH'  // Cebuano (fallback to Tagalog if not supported)
+      };
+      
+      const language = langMap[langCode] || 'en-US';
+      
+      await window.Capacitor.Plugins.TTSPlugin.speak({
+        text: text,
+        language: language,
+        rate: 1.0,
+        pitch: 1.0
+      });
+      
+      console.log(`[TTS] Native spoken [${language}]:`, text);
+    } catch (error) {
+      console.error('[TTS] Native TTS error:', error);
+      // Fallback to web TTS
+      speakWeb(text, langCode);
     }
-
-    const langCode = getCurrentLanguageCode();
-
-    // Cancel any ongoing speech
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-
-    // Basic rate/pitch/volume
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
-
-    // Choose language code for the utterance
-    if (langCode === 'ta') {
-      utterance.lang = 'fil-PH'; // Tagalog / Filipino
-    } else if (langCode === 'ce') {
-      // Many browsers don't have a Cebuano voice; use Filipino if not available
-      utterance.lang = 'fil-PH';
-    } else {
-      utterance.lang = 'en-US';
-    }
-
-    // Try to pick an actual matching voice
-    const voice = pickVoiceForLanguage(langCode);
-    if (voice) {
-      utterance.voice = voice;
-    }
-
-    window.speechSynthesis.speak(utterance);
-    console.log(`Announced [${utterance.lang}]:`, text);
+    
+  } else {
+    // === USE WEB SPEECH API ===
+    speakWeb(text, langCode);
   }
+}
+
+function speakWeb(text, langCode) {
+  if (!('speechSynthesis' in window)) {
+    console.log('[TTS] Text-to-speech not supported:', text);
+    return;
+  }
+  
+  console.log('[TTS] Using Web Speech API');
+  
+  // Cancel any ongoing speech
+  window.speechSynthesis.cancel();
+  
+  const utterance = new SpeechSynthesisUtterance(text);
+  
+  // Basic rate/pitch/volume
+  utterance.rate = 1.0;
+  utterance.pitch = 1.0;
+  utterance.volume = 1.0;
+  
+  // Choose language code for the utterance
+  if (langCode === 'ta') {
+    utterance.lang = 'fil-PH'; // Tagalog / Filipino
+  } else if (langCode === 'ce') {
+    // Many browsers don't have a Cebuano voice; use Filipino if not available
+    utterance.lang = 'fil-PH';
+  } else {
+    utterance.lang = 'en-US';
+  }
+  
+  // Try to pick an actual matching voice
+  const voice = pickVoiceForLanguage(langCode);
+  if (voice) {
+    utterance.voice = voice;
+  }
+  
+  window.speechSynthesis.speak(utterance);
+  console.log(`[TTS] Web spoken [${utterance.lang}]:`, text);
+}
+
+// Helper: pick an appropriate voice for the language
+function pickVoiceForLanguage(langCode) {
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices || !voices.length) return null;
+  
+  const prefsByLang = {
+    en: ['en-PH', 'en-US', 'en-GB'],
+    ta: ['fil-PH', 'tl-PH', 'en-PH'],
+    ce: ['ceb', 'fil-PH', 'tl-PH', 'en-PH']
+  };
+  
+  const prefs = prefsByLang[langCode] || prefsByLang.en;
+  
+  for (const pref of prefs) {
+    const v = voices.find(voice =>
+      voice.lang.toLowerCase().startsWith(pref.toLowerCase())
+    );
+    if (v) return v;
+  }
+  return null;
+}
+
+// Export globally
+window.speak = speak;
 
   // ========================================
   // VIBRATION
