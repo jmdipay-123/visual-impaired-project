@@ -511,7 +511,7 @@ if (window.Capacitor) {
     
     document.body.appendChild(voiceButton);
     console.log('Voice button created');
-    document.getElementById('voiceRecognitionBtn').style.display = 'none';
+    
 
   }
 
