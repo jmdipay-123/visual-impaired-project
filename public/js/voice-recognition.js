@@ -271,45 +271,57 @@
   // START/STOP LISTENING
   // ========================================
   
-  async function startListening() {
-    if (!isSupported) {
-      showVoiceMessage('Voice recognition not supported', 'error');
-      return false;
-    }
-    
-    // Request microphone permission explicitly (especially for mobile)
-    try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-      console.log('Microphone permission granted');
-    } catch (error) {
-      console.error('Microphone permission denied:', error);
-      showVoiceMessage('Please allow microphone access', 'error');
-      return false;
-    }
-    
-    if (!recognition) {
-      const initialized = initializeVoiceRecognition();
-      if (!initialized) return false;
-    }
-    
-    try {
-      recognition.start();
-      isListening = true;
-      updateVoiceButton(true);
-      
-      // Only show message if manually started (not auto-start)
-      if (!AUTO_START || voiceButton.classList.contains('listening')) {
-        showVoiceMessage('Listening for voice commands...', 'info');
-      }
-      
-      console.log('Voice recognition started');
-      return true;
-    } catch (error) {
-      console.error('Error starting recognition:', error);
-      showVoiceMessage('Could not start voice recognition', 'error');
-      return false;
-    }
+ async function startListening() {
+  if (!isSupported) {
+    showVoiceMessage('Voice recognition not supported', 'error');
+    return false;
   }
+  
+  // Request microphone permission explicitly
+  try {
+    console.log('Requesting microphone access...');
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    console.log('✅ Microphone access granted');
+    
+    // Stop the test stream
+    stream.getTracks().forEach(track => track.stop());
+  } catch (error) {
+    console.error('❌ Microphone access denied:', error);
+    
+    if (error.name === 'NotAllowedError') {
+      showVoiceMessage('Microphone permission denied. Please enable in settings.', 'error');
+    } else if (error.name === 'NotFoundError') {
+      showVoiceMessage('No microphone found on device.', 'error');
+    } else {
+      showVoiceMessage('Could not access microphone: ' + error.message, 'error');
+    }
+    return false;
+  }
+  
+  // ... rest of your existing startListening code ...
+  
+  if (!recognition) {
+    const initialized = initializeVoiceRecognition();
+    if (!initialized) return false;
+  }
+  
+  try {
+    recognition.start();
+    isListening = true;
+    updateVoiceButton(true);
+    
+    if (!AUTO_START || voiceButton.classList.contains('listening')) {
+      showVoiceMessage('Listening for voice commands...', 'info');
+    }
+    
+    console.log('Voice recognition started');
+    return true;
+  } catch (error) {
+    console.error('Error starting recognition:', error);
+    showVoiceMessage('Could not start voice recognition', 'error');
+    return false;
+  }
+}
 
   function stopListening() {
     if (recognition && isListening) {
