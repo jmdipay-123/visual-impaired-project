@@ -235,37 +235,48 @@
   }
 
   function showVoiceMessage(message, type = 'info') {
-    const existingMsg = document.getElementById('voiceMessage');
-    if (existingMsg) {
-      existingMsg.remove();
-    }
-    
-    const msgDiv = document.createElement('div');
-    msgDiv.id = 'voiceMessage';
-    msgDiv.textContent = message;
-    msgDiv.style.cssText = `
-      position: fixed;
-      top: 140px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 12px 24px;
-      background: ${type === 'error' ? '#dc3545' : '#28a745'};
-      color: white;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      z-index: 9999;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      animation: slideDown 0.3s ease;
-    `;
-    
-    document.body.appendChild(msgDiv);
-    
-    setTimeout(() => {
+  const existingMsg = document.getElementById('voiceMessage');
+  if (existingMsg) {
+    existingMsg.remove();
+  }
+  
+  const msgDiv = document.createElement('div');
+  msgDiv.id = 'voiceMessage';
+  msgDiv.textContent = message;
+  
+  // Background color based on type
+  const bgColor = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#007bff';
+  
+  msgDiv.style.cssText = `
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 24px;
+    background: ${bgColor};
+    color: white;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 9999;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    animation: slideDown 0.3s ease;
+    max-width: 90%;
+    text-align: center;
+  `;
+  
+  document.body.appendChild(msgDiv);
+  
+  console.log('[voice-message]', message); // Also log to console
+  
+  // Auto-remove after 2 seconds
+  setTimeout(() => {
+    if (msgDiv && msgDiv.parentNode) {
       msgDiv.style.animation = 'slideUp 0.3s ease';
       setTimeout(() => msgDiv.remove(), 300);
-    }, 2000);
-  }
+    }
+  }, 2000);
+}
 
   // ========================================
   // START/STOP LISTENING
