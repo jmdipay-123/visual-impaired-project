@@ -40,7 +40,7 @@ if (!deviceId) {
   console.log("═════════════════════════════════");
 
   // === Display Pairing Code on Screen ===
-  function displayPairingBanner() {
+function displayPairingBanner() {
   // Remove existing banner if any
   const existingBanner = document.getElementById("pairingBanner");
   if (existingBanner) existingBanner.remove();
@@ -64,6 +64,9 @@ if (!deviceId) {
     gap: 6px;
     animation: slideIn 0.5s ease-out;
     max-width: 200px;
+    cursor: move;
+    touch-action: none;
+    user-select: none;
   `;
 
   banner.innerHTML = `
@@ -92,8 +95,13 @@ if (!deviceId) {
         background: rgba(76, 175, 80, 0.3);
         color: #4CAF50;
       }
+      #pairingBanner.dragging {
+        opacity: 0.8;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      }
     </style>
     <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600;">
+      <i class="fas fa-grip-vertical" style="font-size: 10px; opacity: 0.5;"></i>
       <i class="fas fa-lock" style="font-size: 12px;"></i>
       <span>Remote</span>
     </div>
@@ -115,6 +123,84 @@ if (!deviceId) {
   `;
 
   document.body.appendChild(banner);
+
+  // === Drag functionality ===
+  let isDragging = false;
+  let currentX;
+  let currentY;
+  let initialX;
+  let initialY;
+  let xOffset = 0;
+  let yOffset = 0;
+
+  // Get initial position from current style
+  const rect = banner.getBoundingClientRect();
+  xOffset = rect.left;
+  yOffset = rect.top;
+
+  function dragStart(e) {
+    if (e.type === "touchstart") {
+      initialX = e.touches[0].clientX - xOffset;
+      initialY = e.touches[0].clientY - yOffset;
+    } else {
+      initialX = e.clientX - xOffset;
+      initialY = e.clientY - yOffset;
+    }
+
+    if (e.target === banner || banner.contains(e.target)) {
+      isDragging = true;
+      banner.classList.add('dragging');
+    }
+  }
+
+  function dragEnd(e) {
+    initialX = currentX;
+    initialY = currentY;
+    isDragging = false;
+    banner.classList.remove('dragging');
+  }
+
+  function drag(e) {
+    if (isDragging) {
+      e.preventDefault();
+
+      if (e.type === "touchmove") {
+        currentX = e.touches[0].clientX - initialX;
+        currentY = e.touches[0].clientY - initialY;
+      } else {
+        currentX = e.clientX - initialX;
+        currentY = e.clientY - initialY;
+      }
+
+      xOffset = currentX;
+      yOffset = currentY;
+
+      // Keep within viewport bounds
+      const maxX = window.innerWidth - banner.offsetWidth;
+      const maxY = window.innerHeight - banner.offsetHeight;
+      
+      xOffset = Math.max(0, Math.min(xOffset, maxX));
+      yOffset = Math.max(0, Math.min(yOffset, maxY));
+
+      setTranslate(xOffset, yOffset, banner);
+    }
+  }
+
+  function setTranslate(xPos, yPos, el) {
+    el.style.left = xPos + "px";
+    el.style.top = yPos + "px";
+    el.style.right = "auto";
+  }
+
+  // Mouse events
+  banner.addEventListener("mousedown", dragStart);
+  document.addEventListener("mousemove", drag);
+  document.addEventListener("mouseup", dragEnd);
+
+  // Touch events
+  banner.addEventListener("touchstart", dragStart, { passive: false });
+  document.addEventListener("touchmove", drag, { passive: false });
+  document.addEventListener("touchend", dragEnd);
 }
 
   function updatePairingStatus(paired) {
