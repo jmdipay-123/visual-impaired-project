@@ -1,5 +1,5 @@
 // Real-time Object Detection with Roboflow
-(function() {
+(function () {
   'use strict';
 
   // ========================================
@@ -18,7 +18,7 @@
   // CLASS NAME NORMALIZATION
   // (Fix for corrupted Roboflow class names)
   // ========================================
-  
+
   // Map corrupted class names to proper ones
   const CLASS_NAME_MAP = {
     // User confirmed mapping in ROBOFLOW (2 models):  
@@ -35,19 +35,19 @@
    */
   function normalizeClassName(className) {
     if (!className) return 'unknown';
-    
+
     const cleanName = String(className).trim().toLowerCase();
-    
+
     // Direct mapping for door and stairs
     if (CLASS_NAME_MAP[cleanName]) {
       return CLASS_NAME_MAP[cleanName];
     }
-    
+
     // Check for person (long numeric string starting with "2 1 0-")
     if (cleanName.startsWith('2 1 0-') || cleanName.startsWith('2 1 0 -')) {
       return 'person';
     }
-    
+
     // Fallback: check if it contains recognizable keywords
     if (cleanName.includes('person') || cleanName.includes('people')) {
       return 'person';
@@ -58,7 +58,7 @@
     if (cleanName.includes('door') || cleanName.includes('gate')) {
       return 'door';
     }
-    
+
     // If nothing matches, log it for debugging
     console.warn('Unknown class name:', className);
     return cleanName;
@@ -89,14 +89,14 @@
   // ========================================
   const videoPreview = document.getElementById('videoPreview');
   const previewContainer = document.querySelector('.image-preview-container');
-  
+
   const canvas = document.createElement('canvas');
   canvas.style.position = 'absolute';
   canvas.style.top = '0';
   canvas.style.left = '0';
   canvas.style.pointerEvents = 'none';
   canvas.style.zIndex = '10';
-  
+
   let ctx = null;
   let isDetecting = false;
   let detectionInterval = null;
@@ -107,7 +107,7 @@
   // ========================================
   // LANGUAGE HELPERS (SINGLE SOURCE OF TRUTH)
   // ========================================
-  
+
   function getCurrentLanguageCode() {
     // Read from window.currentLanguage (set by translations.js)
     let lang = window.currentLanguage || document.documentElement.lang || 'en';
@@ -178,7 +178,7 @@
     setupCanvas();
 
     const detectionDelay = 1000 / ROBOFLOW_CONFIG.fps;
-    
+
     const runDetection = async () => {
       if (!isDetecting || !videoPreview.srcObject) {
         return;
@@ -206,7 +206,7 @@
       clearTimeout(detectionInterval);
       detectionInterval = null;
     }
-    
+
     if (ctx) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
@@ -228,7 +228,7 @@
       if (!dataUrl) return;
 
       const apiUrl = `${ROBOFLOW_CONFIG.apiBase}/${ROBOFLOW_CONFIG.modelId}/${ROBOFLOW_CONFIG.version}`;
-      
+
       const response = await fetch(`${apiUrl}?api_key=${ROBOFLOW_CONFIG.apiKey}`, {
         method: 'POST',
         headers: {
@@ -298,9 +298,9 @@
       const rawLabel = prediction.class;
       const normalizedLabel = normalizeClassName(rawLabel);
       const label = normalizedLabel.toLowerCase();
-      
+
       const confidence = Math.round(prediction.confidence * 100);
-      
+
       const color = OBJECT_COLORS[label] || OBJECT_COLORS['default'];
 
       const x = (prediction.x - prediction.width / 2) * scaleX;
@@ -321,9 +321,9 @@
 
       ctx.fillStyle = color;
       ctx.fillRect(
-        x, 
-        y - textHeight - padding, 
-        textMetrics.width + padding * 2, 
+        x,
+        y - textHeight - padding,
+        textMetrics.width + padding * 2,
         textHeight + padding
       );
 
@@ -505,9 +505,123 @@
     }
   }
 
+
   // ========================================
-  // TEXT-TO-SPEECH
+  // HYBRID TEXT-TO-SPEECH (Native + Web)
   // ========================================
+
+  async function speak(text) {
+    if (!text) return;
+
+    const langCode = getCurrentLanguageCode(); // 'en', 'ta', or 'ce'
+
+    console.log('[TTS] speak() called');
+    console.log('[TTS] Text:', text);
+    console.log('[TTS] Language:', langCode);
+
+    // Check if Capacitor is available
+    console.log('[TTS] Capacitor available?', !!window.Capacitor);
+    console.log('[TTS] Capacitor.Plugins available?', !!(window.Capacitor && window.Capacitor.Plugins));
+    console.log('[TTS] TTSPlugin available?', !!(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.TTSPlugin));
+
+    // Check if native TTS is available (Capacitor app)
+    const isNativeTTS = window.Capacitor &&
+      window.Capacitor.Plugins &&
+      window.Capacitor.Plugins.TTSPlugin;
+
+    if (isNativeTTS) {
+      // === USE NATIVE ANDROID TTS ===
+      console.log('[TTS] Using Native Android TTS');
+
+      try {
+        // Map language codes
+        const langMap = {
+          'en': 'en-US',
+          'ta': 'fil-PH', // Tagalog
+          'ce': 'fil-PH'  // Cebuano (fallback to Tagalog if not supported)
+        };
+
+        const language = langMap[langCode] || 'en-US';
+
+        console.log('[TTS] Calling native speak with:', { text, language });
+
+        const result = await window.Capacitor.Plugins.TTSPlugin.speak({
+          text: text,
+          language: language,
+          rate: 1.0,
+          pitch: 1.0
+        });
+
+        console.log('[TTS] Native speak result:', result);
+        console.log(`[TTS] ✅ Native spoken [${language}]:`, text);
+
+      } catch (error) {
+        console.error('[TTS] ❌ Native TTS error:', error);
+        console.error('[TTS] Error details:', JSON.stringify(error));
+
+        // Fallback to web TTS
+        console.log('[TTS] Falling back to Web Speech API');
+        speakWeb(text, langCode);
+      }
+
+    } else {
+      // === USE WEB SPEECH API ===
+      console.log('[TTS] Native TTS not available, using Web Speech API');
+      speakWeb(text, langCode);
+    }
+  }
+
+  function speakWeb(text, langCode) {
+    if (!('speechSynthesis' in window)) {
+      console.log('[TTS] ❌ Text-to-speech not supported:', text);
+      return;
+    }
+
+    console.log('[TTS] Using Web Speech API');
+
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+
+    // Basic rate/pitch/volume
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    // Choose language code for the utterance
+    if (langCode === 'ta') {
+      utterance.lang = 'fil-PH'; // Tagalog / Filipino
+    } else if (langCode === 'ce') {
+      // Many browsers don't have a Cebuano voice; use Filipino if not available
+      utterance.lang = 'fil-PH';
+    } else {
+      utterance.lang = 'en-US';
+    }
+
+    // Try to pick an actual matching voice
+    const voice = pickVoiceForLanguage(langCode);
+    if (voice) {
+      utterance.voice = voice;
+      console.log('[TTS] Using voice:', voice.name, voice.lang);
+    }
+
+    // Add event handlers for debugging
+    utterance.onstart = () => {
+      console.log('[TTS] ▶️ Speech started');
+    };
+
+    utterance.onend = () => {
+      console.log('[TTS] ✅ Speech ended');
+    };
+
+    utterance.onerror = (event) => {
+      console.error('[TTS] ❌ Speech error:', event.error);
+    };
+
+    window.speechSynthesis.speak(utterance);
+    console.log(`[TTS] Web spoken [${utterance.lang}]:`, text);
+  }
 
   // Helper: pick an appropriate voice for the language
   function pickVoiceForLanguage(langCode) {
@@ -531,116 +645,35 @@
     return null;
   }
 
-  // ========================================
-// HYBRID TEXT-TO-SPEECH (Native + Web)
-// ========================================
+  // Export globally
+  window.speak = speak;
 
-async function speak(text) {
-  if (!text) return;
-  
-  const langCode = getCurrentLanguageCode(); // 'en', 'ta', or 'ce'
-  
-  // Check if native TTS is available (Capacitor app)
-  const isNativeTTS = window.Capacitor && 
-                      window.Capacitor.Plugins && 
-                      window.Capacitor.Plugins.TTSPlugin;
-  
-  if (isNativeTTS) {
-    // === USE NATIVE ANDROID TTS ===
-    console.log('[TTS] Using Native Android TTS');
-    
-    try {
-      // Map language codes
-      const langMap = {
-        'en': 'en-US',
-        'ta': 'fil-PH', // Tagalog
-        'ce': 'fil-PH'  // Cebuano (fallback to Tagalog if not supported)
-      };
-      
-      const language = langMap[langCode] || 'en-US';
-      
-      await window.Capacitor.Plugins.TTSPlugin.speak({
-        text: text,
-        language: language,
-        rate: 1.0,
-        pitch: 1.0
-      });
-      
-      console.log(`[TTS] Native spoken [${language}]:`, text);
-    } catch (error) {
-      console.error('[TTS] Native TTS error:', error);
-      // Fallback to web TTS
-      speakWeb(text, langCode);
+  // Add a test function for TTS
+  window.testTTS = async function () {
+    console.log('=== TTS TEST ===');
+    console.log('Testing "Hello World"...');
+    await speak('Hello World');
+
+    console.log('\n=== CAPACITOR STATUS ===');
+    console.log('window.Capacitor:', !!window.Capacitor);
+    if (window.Capacitor) {
+      console.log('Capacitor.Plugins:', !!window.Capacitor.Plugins);
+      if (window.Capacitor.Plugins) {
+        console.log('TTSPlugin:', !!window.Capacitor.Plugins.TTSPlugin);
+        console.log('Available plugins:', Object.keys(window.Capacitor.Plugins));
+      }
     }
-    
-  } else {
-    // === USE WEB SPEECH API ===
-    speakWeb(text, langCode);
-  }
-}
 
-function speakWeb(text, langCode) {
-  if (!('speechSynthesis' in window)) {
-    console.log('[TTS] Text-to-speech not supported:', text);
-    return;
-  }
-  
-  console.log('[TTS] Using Web Speech API');
-  
-  // Cancel any ongoing speech
-  window.speechSynthesis.cancel();
-  
-  const utterance = new SpeechSynthesisUtterance(text);
-  
-  // Basic rate/pitch/volume
-  utterance.rate = 1.0;
-  utterance.pitch = 1.0;
-  utterance.volume = 1.0;
-  
-  // Choose language code for the utterance
-  if (langCode === 'ta') {
-    utterance.lang = 'fil-PH'; // Tagalog / Filipino
-  } else if (langCode === 'ce') {
-    // Many browsers don't have a Cebuano voice; use Filipino if not available
-    utterance.lang = 'fil-PH';
-  } else {
-    utterance.lang = 'en-US';
-  }
-  
-  // Try to pick an actual matching voice
-  const voice = pickVoiceForLanguage(langCode);
-  if (voice) {
-    utterance.voice = voice;
-  }
-  
-  window.speechSynthesis.speak(utterance);
-  console.log(`[TTS] Web spoken [${utterance.lang}]:`, text);
-}
-
-// Helper: pick an appropriate voice for the language
-function pickVoiceForLanguage(langCode) {
-  const voices = window.speechSynthesis.getVoices();
-  if (!voices || !voices.length) return null;
-  
-  const prefsByLang = {
-    en: ['en-PH', 'en-US', 'en-GB'],
-    ta: ['fil-PH', 'tl-PH', 'en-PH'],
-    ce: ['ceb', 'fil-PH', 'tl-PH', 'en-PH']
+    console.log('\n=== WEB SPEECH API ===');
+    console.log('speechSynthesis available:', 'speechSynthesis' in window);
+    if ('speechSynthesis' in window) {
+      const voices = window.speechSynthesis.getVoices();
+      console.log('Available voices:', voices.length);
+      console.log('Filipino voices:', voices.filter(v => v.lang.includes('fil') || v.lang.includes('tl')));
+    }
   };
-  
-  const prefs = prefsByLang[langCode] || prefsByLang.en;
-  
-  for (const pref of prefs) {
-    const v = voices.find(voice =>
-      voice.lang.toLowerCase().startsWith(pref.toLowerCase())
-    );
-    if (v) return v;
-  }
-  return null;
-}
 
-// Export globally
-window.speak = speak;
+
 
   // ========================================
   // VIBRATION
@@ -683,7 +716,7 @@ window.speak = speak;
   // ========================================
   // EVENT LISTENERS
   // ========================================
-  
+
   document.addEventListener('cameraStarted', () => {
     console.log('Camera started, beginning detection...');
     setTimeout(() => {
@@ -740,7 +773,7 @@ window.speak = speak;
     stop: stopDetection,
     isActive: () => isDetecting
   };
-  
+
   // Expose speak function for voice recognition
   window.speak = speak;
 

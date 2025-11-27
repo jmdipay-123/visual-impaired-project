@@ -37,6 +37,8 @@ window.testMicrophone = async function() {
   let voiceButton = null;
   let currentLanguage = 'en-US';
   let recognition = null; // For Web Speech API
+  let commandCooldown = false; // Prevent command spam
+  let cooldownTimer = null;
 
   // === DETECT ENVIRONMENT ===
   const isNativeAvailable = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SpeechPlugin;
@@ -184,14 +186,35 @@ window.testMicrophone = async function() {
   }
 
   function handleLanguageChange(targetLang, transcript) {
+    // Check if we're in cooldown period
+    if (commandCooldown) {
+      console.log('[COOLDOWN] Ignoring duplicate command');
+      return;
+    }
+
     console.log(`[LANGUAGE CHANGE] "${transcript}" → ${targetLang}`);
     showVoiceMessage(`Changing to ${getLanguageName(targetLang)}...`, 'success');
     playConfirmationSound();
+    
+    // Set cooldown to prevent spam (5 seconds)
+    commandCooldown = true;
+    if (cooldownTimer) clearTimeout(cooldownTimer);
+    cooldownTimer = setTimeout(() => {
+      commandCooldown = false;
+      console.log('[COOLDOWN] Ready for next command');
+    }, 5000);
     
     if (window.changeLanguage) {
       window.changeLanguage(targetLang);
       currentLanguage = langMap[targetLang] || 'en-US';
       
+      // Update recognition language if using web API
+      if (recognition) {
+        recognition.lang = currentLanguage;
+        console.log('[WEB] Recognition language updated to:', currentLanguage);
+      }
+      
+      // Announce change in the NEW language
       setTimeout(() => {
         const message = getLanguageChangedMessage(targetLang);
         if (window.speak) {
@@ -226,6 +249,7 @@ window.testMicrophone = async function() {
         showVoiceMessage('Command not recognized', 'error');
       }
 
+      // Continue listening after a delay (only if still active)
       setTimeout(() => {
         if (isListening) {
           startNativeSpeech();
@@ -271,7 +295,7 @@ window.testMicrophone = async function() {
         const targetLang = matchLanguageCommand(transcript);
         if (targetLang) {
           handleLanguageChange(targetLang, transcript);
-          break;
+          break; // Stop processing after first match
         } else {
           setTimeout(() => {
             showVoiceMessage('Command not recognized', 'error');
@@ -288,18 +312,28 @@ window.testMicrophone = async function() {
       } else if (event.error === 'not-allowed') {
         stopWebSpeech();
         showVoiceMessage('Microphone access denied', 'error');
+      } else if (event.error === 'aborted') {
+        console.log('Recognition aborted, will restart if still active');
       } else {
         console.error('Recognition error:', event.error);
       }
     };
 
     recognition.onend = () => {
+      console.log('[WEB] Recognition ended');
+      
+      // Only restart if we're still supposed to be listening
       if (isListening) {
-        try {
-          recognition.start();
-        } catch (error) {
-          console.log('Recognition restart error:', error);
-        }
+        console.log('[WEB] Restarting recognition...');
+        setTimeout(() => {
+          if (isListening) {
+            try {
+              recognition.start();
+            } catch (error) {
+              console.log('[WEB] Restart error (already running?):', error);
+            }
+          }
+        }, 500); // Small delay before restart
       }
     };
 
@@ -320,8 +354,15 @@ window.testMicrophone = async function() {
       showVoiceMessage('🎤 Listening for commands...', 'info');
       console.log('[WEB] Voice recognition started');
     } catch (error) {
-      console.error('[WEB] Error starting:', error);
-      showVoiceMessage('Could not start voice recognition', 'error');
+      // If already started, just ignore
+      if (error.message && error.message.includes('already started')) {
+        console.log('[WEB] Already running');
+        isListening = true;
+        updateVoiceButton(true);
+      } else {
+        console.error('[WEB] Error starting:', error);
+        showVoiceMessage('Could not start voice recognition', 'error');
+      }
     }
   }
 
