@@ -280,7 +280,7 @@
           width: { ideal: 1280 },
           height: { ideal: 720 }
         },
-        audio: false
+        audio: true
       };
 
       stream = await navigator.mediaDevices.getUserMedia(constraints);
