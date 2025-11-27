@@ -494,31 +494,51 @@
   // INITIALIZE ON PAGE LOAD
   // ========================================
   
-  window.addEventListener('DOMContentLoaded', async () => {
-    addStyles();
-    createVoiceButton();
+window.addEventListener('DOMContentLoaded', async () => {
+  addStyles();
+  createVoiceButton();
+  
+  if (isSupported) {
+    console.log('Voice recognition available');
+    console.log('Voice commands: "Change language to English/Tagalog/Cebuano"');
     
-    if (isSupported) {
-      console.log('Voice recognition available');
-      console.log('Voice commands: "Change language to English/Tagalog/Cebuano"');
+    // Auto-start voice recognition if enabled
+    if (AUTO_START) {
+      console.log('Auto-starting voice recognition...');
       
-      // Auto-start voice recognition if enabled
-      if (AUTO_START) {
-        console.log('Auto-starting voice recognition...');
-        // Wait a bit for page to fully load
-        setTimeout(async () => {
+      // === FIX: Wait for camera startup to complete before starting voice ===
+      // Check if camera is starting up (audio playing)
+      let cameraStartupComplete = false;
+      
+      // Listen for camera startup complete event
+      document.addEventListener('cameraStartupComplete', () => {
+        cameraStartupComplete = true;
+      });
+      
+      // Wait 8 seconds (enough for camera startup audio to finish)
+      setTimeout(async () => {
+        // Only start if camera startup is done OR if no camera startup happened
+        if (cameraStartupComplete || !document.getElementById('useCameraBtn')) {
           const started = await startListening();
           if (started) {
             console.log('Voice recognition auto-started successfully');
+            // Don't show message since it's auto-start
           } else {
             console.log('Voice recognition auto-start failed - click microphone button to retry');
           }
-        }, 1000);
-      }
-    } else {
-      console.log('Voice recognition not supported in this browser');
+        } else {
+          console.log('Waiting for camera startup to complete...');
+          // Try again after camera startup
+          document.addEventListener('cameraStartupComplete', async () => {
+            await startListening();
+          }, { once: true });
+        }
+      }, 8000); // 8 seconds delay
     }
-  });
+  } else {
+    console.log('Voice recognition not supported in this browser');
+  }
+});
 
   // ========================================
   // CLEANUP ON PAGE UNLOAD

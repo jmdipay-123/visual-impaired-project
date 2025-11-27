@@ -258,90 +258,88 @@
   // ========================================
   
   async function startCamera() {
-    if (!hasGetUserMedia()) {
-      showError('Camera is not supported by your browser');
-      return;
-    }
-
-    try {
-      // Create startup indicator
-      createStartupIndicator();
-      useCameraBtn.disabled = true;
-
-      // Step 1: Requesting camera access
-      const step1Message = window.t ? window.t('cameraRequestingAccess') : 'Requesting camera access...';
-      updateStartupProgress(1, step1Message);
-      await announceMessage(1); // Pass step number for audio file selection
-
-      // Request camera access
-      const constraints = {
-        video: {
-          facingMode: 'environment', // Use back camera on mobile
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
-        audio: false
-      };
-
-      stream = await navigator.mediaDevices.getUserMedia(constraints);
-
-      // Step 2: Initializing camera
-      const step2Message = window.t ? window.t('cameraInitializing') : 'Initializing camera...';
-      updateStartupProgress(2, step2Message);
-      await announceMessage(2); // Pass step number for audio file selection
-
-      // Set up video element
-      videoPreview.srcObject = stream;
-      videoPreview.style.display = 'block';
-      previewPlaceholder.style.display = 'none';
-
-      // Wait for video to be ready
-      await new Promise((resolve) => {
-        videoPreview.onloadedmetadata = () => {
-          videoPreview.play();
-          resolve();
-        };
-      });
-
-      // Step 3: Detection ready
-      const step3Message = window.t ? window.t('cameraDetectionReady') : 'Detection ready';
-      updateStartupProgress(3, step3Message);
-      await announceMessage(3); // Pass step number for audio file selection
-
-      // Update button states
-      isCameraActive = true;
-      useCameraBtn.style.display = 'none';
-      stopCameraBtn.style.display = 'inline-flex';
-
-      // Remove startup indicator
-      removeStartupIndicator();
-
-      // Show recording indicator
-      createRecordingIndicator();
-
-      // Dispatch event for detection to start
-      document.dispatchEvent(new CustomEvent('cameraStarted'));
-
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-      
-      let errorMessage = 'Failed to access camera';
-      
-      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-        errorMessage = 'Camera access denied. Please allow camera permissions.';
-      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-        errorMessage = 'No camera found on this device.';
-      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
-        errorMessage = 'Camera is already in use by another application.';
-      } else if (error.name === 'OverconstrainedError') {
-        errorMessage = 'Camera does not meet the required constraints.';
-      }
-
-      showError(errorMessage);
-      removeStartupIndicator();
-      useCameraBtn.disabled = false;
-    }
+  if (!hasGetUserMedia()) {
+    showError('Camera is not supported by your browser');
+    return;
   }
+
+  // Check if camera is already active
+  if (isCameraActive && stream) {
+    console.log('Camera already active');
+    return;
+  }
+
+  try {
+    // Show loading state
+    showLoading(true);
+    useCameraBtn.disabled = true;
+
+    // Stop any existing stream first
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      stream = null;
+    }
+
+    // Request camera access
+    const constraints = {
+      video: {
+        facingMode: 'environment',
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      },
+      audio: false
+    };
+
+    stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+    // Set up video element
+    videoPreview.srcObject = stream;
+    videoPreview.style.display = 'block';
+    previewPlaceholder.style.display = 'none';
+
+    // Update button states
+    isCameraActive = true;
+    useCameraBtn.style.display = 'none';
+    stopCameraBtn.style.display = 'inline-flex';
+
+    // Hide loading
+    showLoading(false);
+
+    // Optional: Add success feedback
+    showSuccess('Camera started successfully');
+
+    // Dispatch event for detection to start
+    document.dispatchEvent(new CustomEvent('cameraStarted'));
+
+  } catch (error) {
+    console.error('Error accessing camera:', error);
+    
+    let errorMessage = 'Failed to access camera';
+    
+    if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+      errorMessage = 'Camera access denied. Please allow camera permissions.';
+    } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+      errorMessage = 'No camera found on this device.';
+    } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+      errorMessage = 'Camera is already in use. Please close other apps using the camera.';
+      
+      // Try to force release camera
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+      }
+      
+      // Suggest retry
+      errorMessage += ' Tap "Use Camera" again.';
+    } else if (error.name === 'OverconstrainedError') {
+      errorMessage = 'Camera does not meet the required constraints.';
+    }
+
+    showError(errorMessage);
+    showLoading(false);
+    useCameraBtn.disabled = false;
+  }
+}
 
   // Helper function for delays
   function delay(ms) {
