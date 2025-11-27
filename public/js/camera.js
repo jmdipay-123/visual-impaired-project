@@ -1,6 +1,3 @@
-import { Permissions } from '@capacitor/permissions';
-import { Capacitor } from '@capacitor/core';
-
 // Camera Control Script
 (function() {
   'use strict';
@@ -259,19 +256,6 @@ import { Capacitor } from '@capacitor/core';
   // ========================================
   // REQUEST CAMERA ACCESS
   // ========================================
-
-async function requestMobilePermissions() {
-  if (Capacitor.getPlatform() !== 'android') return;
-
-  try {
-    await Permissions.request({
-      permissions: ['camera', 'microphone']
-    });
-  } catch (err) {
-    console.error('Permission request error:', err);
-  }
-}
-
   
   async function startCamera() {
     if (!hasGetUserMedia()) {
