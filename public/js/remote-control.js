@@ -41,79 +41,81 @@ if (!deviceId) {
 
   // === Display Pairing Code on Screen ===
   function displayPairingBanner() {
-    // Remove existing banner if any
-    const existingBanner = document.getElementById("pairingBanner");
-    if (existingBanner) existingBanner.remove();
+  // Remove existing banner if any
+  const existingBanner = document.getElementById("pairingBanner");
+  if (existingBanner) existingBanner.remove();
 
-    const banner = document.createElement("div");
-    banner.id = "pairingBanner";
-    banner.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: linear-gradient(135deg, #FF7A00 0%, #e66a00 100%);
-      color: white;
-      padding: 15px 20px;
-      font-family: 'Segoe UI', Arial, sans-serif;
-      z-index: 10000;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      animation: slideDown 0.5s ease-out;
-    `;
+  const banner = document.createElement("div");
+  banner.id = "pairingBanner";
+  banner.style.cssText = `
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: linear-gradient(135deg, #FF7A00 0%, #e66a00 100%);
+    color: white;
+    padding: 10px 15px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    z-index: 10000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    animation: slideIn 0.5s ease-out;
+    max-width: 200px;
+  `;
 
-    banner.innerHTML = `
-      <style>
-        @keyframes slideDown {
-          from { transform: translateY(-100%); }
-          to { transform: translateY(0); }
-        }
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-        }
-        .pairing-status {
-          padding: 4px 12px;
-          border-radius: 12px;
-          font-size: 12px;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-        .status-waiting {
-          background: rgba(255, 255, 255, 0.2);
-          animation: pulse 2s infinite;
-        }
-        .status-paired {
-          background: rgba(76, 175, 80, 0.3);
-          color: #4CAF50;
-        }
-      </style>
-      <div style="display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500;">
-        <i class="fas fa-lock" style="font-size: 16px;"></i>
-        <span>Remote Control</span>
-      </div>
-      <div id="pairingCodeDisplay" style="
-        font-size: 24px; 
-        font-weight: 700; 
-        letter-spacing: 3px; 
-        font-family: 'Courier New', monospace;
-        background: rgba(0,0,0,0.2);
-        padding: 8px 20px;
-        border-radius: 8px;
-      ">
-        ${pairingCode}
-      </div>
-      <div id="pairingStatus" class="pairing-status status-waiting">
-        Waiting for pairing...
-      </div>
-    `;
+  banner.innerHTML = `
+    <style>
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+      }
+      .pairing-status {
+        padding: 3px 10px;
+        border-radius: 10px;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .status-waiting {
+        background: rgba(255, 255, 255, 0.2);
+        animation: pulse 2s infinite;
+      }
+      .status-paired {
+        background: rgba(76, 175, 80, 0.3);
+        color: #4CAF50;
+      }
+    </style>
+    <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600;">
+      <i class="fas fa-lock" style="font-size: 12px;"></i>
+      <span>Remote</span>
+    </div>
+    <div id="pairingCodeDisplay" style="
+      font-size: 16px; 
+      font-weight: 700; 
+      letter-spacing: 2px; 
+      font-family: 'Courier New', monospace;
+      background: rgba(0,0,0,0.2);
+      padding: 6px 12px;
+      border-radius: 6px;
+      text-align: center;
+    ">
+      ${pairingCode}
+    </div>
+    <div id="pairingStatus" class="pairing-status status-waiting">
+      Waiting...
+    </div>
+  `;
 
-    document.body.appendChild(banner);
-  }
+  document.body.appendChild(banner);
+}
 
   function updatePairingStatus(paired) {
     const statusEl = document.getElementById("pairingStatus");
