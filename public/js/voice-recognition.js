@@ -214,10 +214,27 @@ window.testMicrophone = async function() {
         
         // Try native TTS first
         if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.TTSPlugin) {
-            speakNative(message, language);
-          } else if (window.speak) {
+          try {
+            console.log('[LANGUAGE CHANGE] Using native TTS');
+            await window.Capacitor.Plugins.TTSPlugin.speak({
+              text: message,
+              language: language,
+              rate: 1.0,
+              pitch: 1.0
+            });
+            console.log('[LANGUAGE CHANGE] ✅ Native TTS spoke');
+          } catch (error) {
+            console.error('[LANGUAGE CHANGE] ❌ Native TTS failed:', error);
+            if (window.speak) {
+              window.speak(message);
+            }
+          }
+        } else {
+          console.log('[LANGUAGE CHANGE] Using window.speak (web)');
+          if (window.speak) {
             window.speak(message);
           }
+        }
       }, 500);
     }
   }
