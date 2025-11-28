@@ -30,7 +30,8 @@ window.testMicrophone = async function () {
 };
 
 // Voice Recognition for Language Switching (Hybrid: Web + Native)
-(function () {
+// Voice Recognition for Language Switching (Hybrid: Web + Native)
+(function() {
   'use strict';
 
   let isListening = false;
@@ -65,27 +66,27 @@ window.testMicrophone = async function () {
     'use english': 'en',
     'english': 'en',
     'change to english': 'en',
-
+    
     'change language to tagalog': 'tl',
     'switch to tagalog': 'tl',
     'use tagalog': 'tl',
     'tagalog': 'tl',
     'change to tagalog': 'tl',
-
+    
     'change language to cebuano': 'ceb',
     'switch to cebuano': 'ceb',
     'use cebuano': 'ceb',
     'cebuano': 'ceb',
     'sebuano': 'ceb',
     'change to cebuano': 'ceb',
-
+    
     'ilipat ang wika sa english': 'en',
     'gamitin ang english': 'en',
     'ilipat ang wika sa tagalog': 'tl',
     'gamitin ang tagalog': 'tl',
     'ilipat ang wika sa cebuano': 'ceb',
     'gamitin ang cebuano': 'ceb',
-
+    
     'usba ang pinulongan sa english': 'en',
     'gamita ang english': 'en',
     'usba ang pinulongan sa tagalog': 'tl',
@@ -96,21 +97,21 @@ window.testMicrophone = async function () {
 
   function matchLanguageCommand(transcript) {
     const cleanTranscript = transcript.toLowerCase().trim();
-
+    
     if (LANGUAGE_COMMANDS[cleanTranscript]) {
       return LANGUAGE_COMMANDS[cleanTranscript];
     }
-
+    
     for (const [command, lang] of Object.entries(LANGUAGE_COMMANDS)) {
       if (cleanTranscript.includes(command)) {
         return lang;
       }
     }
-
+    
     if (cleanTranscript.includes('english') || cleanTranscript.includes('ingles')) return 'en';
     if (cleanTranscript.includes('tagalog')) return 'tl';
     if (cleanTranscript.includes('cebuano') || cleanTranscript.includes('sebuano') || cleanTranscript.includes('bisaya')) return 'ceb';
-
+    
     return null;
   }
 
@@ -133,16 +134,16 @@ window.testMicrophone = async function () {
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
-
+      
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
-
+      
       oscillator.frequency.value = 800;
       oscillator.type = 'sine';
-
+      
       gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-
+      
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.1);
     }
@@ -151,9 +152,9 @@ window.testMicrophone = async function () {
   function showVoiceMessage(message, type = 'info') {
     const existingMsg = document.getElementById('voiceMessage');
     if (existingMsg) existingMsg.remove();
-
+    
     const bgColor = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#007bff';
-
+    
     const msgDiv = document.createElement('div');
     msgDiv.id = 'voiceMessage';
     msgDiv.textContent = message;
@@ -171,10 +172,10 @@ window.testMicrophone = async function () {
     msgDiv.style.boxShadow = '0 4px 16px rgba(0,0,0,0.5)';
     msgDiv.style.maxWidth = '90%';
     msgDiv.style.textAlign = 'center';
-
+    
     document.body.appendChild(msgDiv);
     console.log(`[VOICE] ${message}`);
-
+    
     setTimeout(() => {
       if (msgDiv.parentNode) msgDiv.remove();
     }, 3000);
@@ -189,39 +190,31 @@ window.testMicrophone = async function () {
     console.log(`[LANGUAGE CHANGE] "${transcript}" -> ${targetLang}`);
     showVoiceMessage(`Changing to ${getLanguageName(targetLang)}...`, 'success');
     playConfirmationSound();
-
+    
     commandCooldown = true;
     if (cooldownTimer) clearTimeout(cooldownTimer);
     cooldownTimer = setTimeout(() => {
       commandCooldown = false;
       console.log('[COOLDOWN] Ready for next command');
     }, 5000);
-
+    
     if (window.changeLanguage) {
       window.changeLanguage(targetLang);
       currentLanguage = langMap[targetLang] || 'en-US';
-
+      
       if (recognition) {
         recognition.lang = currentLanguage;
       }
-
+      
       // Announce in new language using native TTS
       setTimeout(async () => {
         const message = getLanguageChangedMessage(targetLang);
         const language = langMap[targetLang] || 'en-US';
-
+        
         console.log('[LANGUAGE CHANGE] Announcing:', message, 'in', language);
-
-        // Re-check if Capacitor is available NOW (after delay)
-        const hasNativeTTS = window.Capacitor &&
-          window.Capacitor.Plugins &&
-          window.Capacitor.Plugins.TTSPlugin;
-
-        console.log('[LANGUAGE CHANGE] Capacitor available?', !!window.Capacitor);
-        console.log('[LANGUAGE CHANGE] Plugins available?', !!(window.Capacitor?.Plugins));
-        console.log('[LANGUAGE CHANGE] TTSPlugin available?', hasNativeTTS);
-
-        if (hasNativeTTS) {
+        
+        // Try native TTS first
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.TTSPlugin) {
           try {
             console.log('[LANGUAGE CHANGE] Using native TTS');
             await window.Capacitor.Plugins.TTSPlugin.speak({
@@ -243,7 +236,7 @@ window.testMicrophone = async function () {
             window.speak(message);
           }
         }
-      }, 1500); // Increased from 500 to 1500ms
+      }, 500);
     }
   }
 
@@ -301,13 +294,13 @@ window.testMicrophone = async function () {
 
     recognition.onresult = async (event) => {
       const results = event.results[event.results.length - 1];
-
+      
       for (let i = 0; i < results.length; i++) {
         const transcript = results[i].transcript.toLowerCase().trim();
         console.log('[WEB] Heard:', transcript);
-
+        
         showVoiceMessage(`Heard: "${transcript}"`, 'info');
-
+        
         const targetLang = matchLanguageCommand(transcript);
         if (targetLang) {
           await handleLanguageChange(targetLang, transcript);
@@ -322,7 +315,7 @@ window.testMicrophone = async function () {
 
     recognition.onerror = (event) => {
       console.error('[WEB] Error:', event.error);
-
+      
       if (event.error === 'no-speech') {
         console.log('No speech detected, continuing...');
       } else if (event.error === 'not-allowed') {
@@ -337,7 +330,7 @@ window.testMicrophone = async function () {
 
     recognition.onend = () => {
       console.log('[WEB] Recognition ended');
-
+      
       if (isListening) {
         console.log('[WEB] Restarting recognition...');
         setTimeout(() => {
@@ -418,7 +411,7 @@ window.testMicrophone = async function () {
 
   function updateVoiceButton(listening) {
     if (!voiceButton) return;
-
+    
     const icon = voiceButton.querySelector('i');
     if (listening) {
       voiceButton.classList.add('listening');
@@ -438,7 +431,7 @@ window.testMicrophone = async function () {
     voiceButton.innerHTML = '<i class="fas fa-microphone"></i>';
     voiceButton.setAttribute('aria-label', 'Start voice commands');
     voiceButton.onclick = toggleListening;
-
+    
     voiceButton.style.cssText = `
       position: fixed;
       bottom: 30px;
@@ -454,20 +447,20 @@ window.testMicrophone = async function () {
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
       z-index: 1000;
       transition: all 0.3s ease;
-      display: block;
+      display: none;
     `;
-
+    
     voiceButton.addEventListener('mouseenter', () => {
       voiceButton.style.transform = 'scale(1.1)';
     });
-
+    
     voiceButton.addEventListener('mouseleave', () => {
       voiceButton.style.transform = 'scale(1)';
     });
-
+    
     document.body.appendChild(voiceButton);
-
-    console.log(`✅ Voice button created`);
+    
+    console.log(`✅ Voice button created (hidden)`);
   }
 
   function addStyles() {
@@ -499,11 +492,11 @@ window.testMicrophone = async function () {
   document.addEventListener('languageChanged', (event) => {
     const newLang = event.detail.language;
     currentLanguage = langMap[newLang] || 'en-US';
-
+    
     if (recognition) {
       recognition.lang = currentLanguage;
     }
-
+    
     console.log('Voice recognition language updated to:', currentLanguage);
   });
 
@@ -511,6 +504,12 @@ window.testMicrophone = async function () {
     addStyles();
     createVoiceButton();
     console.log(`✅ Voice recognition ready`);
+    
+    // Auto-start listening after 2 seconds
+    setTimeout(() => {
+      console.log('🎤 Auto-starting voice recognition...');
+      startListening();
+    }, 2000);
   });
 
   window.addEventListener('beforeunload', () => {
