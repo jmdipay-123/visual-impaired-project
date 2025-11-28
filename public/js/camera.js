@@ -101,53 +101,52 @@
 
   // Announce message using pre-recorded MP3 files and wait for completion
   function announceMessage(step) {
-    return new Promise((resolve) => {
-      // Get current language
-      const langCode = window.getCurrentLanguage ? window.getCurrentLanguage() : 'en';
-      
-      // Normalize language code (tl → ta)
-      let normalizedLang = langCode;
-      if (langCode === 'tl') normalizedLang = 'ta';
-      if (langCode === 'ceb') normalizedLang = 'ce';
-      
-      // Map step number to audio file
-      let audioKey = '';
-      if (step === 1) audioKey = 'access';
-      else if (step === 2) audioKey = 'initialize';
-      else if (step === 3) audioKey = 'ready';
-      
-      // Get audio file path
-      const audioFiles = STARTUP_AUDIO_FILES[normalizedLang] || STARTUP_AUDIO_FILES.en;
-      const audioPath = audioFiles[audioKey];
-      
-      if (!audioPath) {
-        // No audio file, just wait a bit
-        setTimeout(resolve, 500);
-        return;
+  return new Promise((resolve) => {
+    // PAUSE voice recognition while speaking
+    const wasListening = window.voiceRecognition?.isListening();
+    if (wasListening) {
+      console.log('[CAMERA] Pausing voice recognition for announcement');
+      window.voiceRecognition.stop();
+    }
+    
+    // Get current language
+    const langCode = window.getCurrentLanguage ? window.getCurrentLanguage() : 'en';
+    
+    // ... rest of existing code ...
+    
+    // Listen for audio completion
+    startupAudio.onended = () => {
+      setTimeout(() => {
+        // RESUME voice recognition after speaking
+        if (wasListening) {
+          console.log('[CAMERA] Resuming voice recognition');
+          window.voiceRecognition.start();
+        }
+        resolve();
+      }, 300);
+    };
+    
+    // Handle errors gracefully
+    startupAudio.onerror = () => {
+      console.warn('Audio file not found or failed to load:', audioPath);
+      // RESUME voice recognition even on error
+      if (wasListening) {
+        window.voiceRecognition.start();
       }
-
-      // Set up audio
-      startupAudio.src = audioPath;
-      startupAudio.currentTime = 0;
-
-      // Listen for audio completion
-      startupAudio.onended = () => {
-        setTimeout(resolve, 300); // Small buffer after audio
-      };
-
-      // Handle errors gracefully
-      startupAudio.onerror = () => {
-        console.warn('Audio file not found or failed to load:', audioPath);
-        setTimeout(resolve, 500); // Continue even if audio fails
-      };
-
-      // Play audio
-      startupAudio.play().catch(err => {
-        console.warn('Audio play failed:', err);
-        setTimeout(resolve, 500); // Continue even if play fails
-      });
+      setTimeout(resolve, 500);
+    };
+    
+    // Play audio
+    startupAudio.play().catch(err => {
+      console.warn('Audio play failed:', err);
+      // RESUME voice recognition even on error
+      if (wasListening) {
+        window.voiceRecognition.start();
+      }
+      setTimeout(resolve, 500);
     });
-  }
+  });
+}
 
   function updateStartupProgress(step, message) {
     if (!startupIndicator) return;

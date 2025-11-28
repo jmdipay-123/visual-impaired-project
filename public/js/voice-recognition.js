@@ -182,63 +182,86 @@ window.testMicrophone = async function () {
   }
 
   async function handleLanguageChange(targetLang, transcript) {
-    if (commandCooldown) {
-      console.log('[COOLDOWN] Ignoring duplicate command');
-      return;
-    }
+  if (commandCooldown) {
+    console.log('[COOLDOWN] Ignoring duplicate command');
+    return;
+  }
 
-    console.log(`[LANGUAGE CHANGE] "${transcript}" -> ${targetLang}`);
-    showVoiceMessage(`Changing to ${getLanguageName(targetLang)}...`, 'success');
-    playConfirmationSound();
+  console.log(`[LANGUAGE CHANGE] "${transcript}" -> ${targetLang}`);
+  showVoiceMessage(`Changing to ${getLanguageName(targetLang)}...`, 'success');
+  playConfirmationSound();
+  
+  commandCooldown = true;
+  if (cooldownTimer) clearTimeout(cooldownTimer);
+  cooldownTimer = setTimeout(() => {
+    commandCooldown = false;
+    console.log('[COOLDOWN] Ready for next command');
+  }, 5000);
+  
+  if (window.changeLanguage) {
+    window.changeLanguage(targetLang);
+    currentLanguage = langMap[targetLang] || 'en-US';
     
-    commandCooldown = true;
-    if (cooldownTimer) clearTimeout(cooldownTimer);
-    cooldownTimer = setTimeout(() => {
-      commandCooldown = false;
-      console.log('[COOLDOWN] Ready for next command');
-    }, 5000);
+    if (recognition) {
+      recognition.lang = currentLanguage;
+    }
     
-    if (window.changeLanguage) {
-      window.changeLanguage(targetLang);
-      currentLanguage = langMap[targetLang] || 'en-US';
+    // Announce in new language using native TTS
+    setTimeout(async () => {
+      const message = getLanguageChangedMessage(targetLang);
+      const language = langMap[targetLang] || 'en-US';
       
-      if (recognition) {
-        recognition.lang = currentLanguage;
+      console.log('[LANGUAGE CHANGE] Announcing:', message, 'in', language);
+      
+      // STOP listening before speaking
+      const wasListening = isListening;
+      if (wasListening) {
+        console.log('[LANGUAGE CHANGE] Pausing voice recognition');
+        stopListening();
       }
       
-      // Announce in new language using native TTS
-      setTimeout(async () => {
-        const message = getLanguageChangedMessage(targetLang);
-        const language = langMap[targetLang] || 'en-US';
-        
-        console.log('[LANGUAGE CHANGE] Announcing:', message, 'in', language);
-        
-        // Try native TTS first
-        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.TTSPlugin) {
-          try {
-            console.log('[LANGUAGE CHANGE] Using native TTS');
-            await window.Capacitor.Plugins.TTSPlugin.speak({
-              text: message,
-              language: language,
-              rate: 1.0,
-              pitch: 1.0
-            });
-            console.log('[LANGUAGE CHANGE] ✅ Native TTS spoke');
-          } catch (error) {
-            console.error('[LANGUAGE CHANGE] ❌ Native TTS failed:', error);
-            if (window.speak) {
-              window.speak(message);
-            }
-          }
-        } else {
-          console.log('[LANGUAGE CHANGE] Using window.speak (web)');
+      // Re-check if Capacitor is available NOW (after delay)
+      const hasNativeTTS = window.Capacitor && 
+                           window.Capacitor.Plugins && 
+                           window.Capacitor.Plugins.TTSPlugin;
+      
+      console.log('[LANGUAGE CHANGE] Capacitor available?', !!window.Capacitor);
+      console.log('[LANGUAGE CHANGE] Plugins available?', !!(window.Capacitor?.Plugins));
+      console.log('[LANGUAGE CHANGE] TTSPlugin available?', hasNativeTTS);
+      
+      if (hasNativeTTS) {
+        try {
+          console.log('[LANGUAGE CHANGE] Using native TTS');
+          await window.Capacitor.Plugins.TTSPlugin.speak({
+            text: message,
+            language: language,
+            rate: 1.0,
+            pitch: 1.0
+          });
+          console.log('[LANGUAGE CHANGE] ✅ Native TTS spoke');
+        } catch (error) {
+          console.error('[LANGUAGE CHANGE] ❌ Native TTS failed:', error);
           if (window.speak) {
             window.speak(message);
           }
         }
-      }, 500);
-    }
+      } else {
+        console.log('[LANGUAGE CHANGE] Using window.speak (web)');
+        if (window.speak) {
+          window.speak(message);
+        }
+      }
+      
+      // RESTART listening after speaking (wait 2 seconds for TTS to finish)
+      if (wasListening) {
+        setTimeout(() => {
+          console.log('[LANGUAGE CHANGE] Resuming voice recognition');
+          startListening();
+        }, 2000);
+      }
+    }, 1500);
   }
+}
 
   async function startNativeSpeech() {
     if (!isNativeAvailable) return;
