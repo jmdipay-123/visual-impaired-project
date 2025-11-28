@@ -112,38 +112,70 @@
     // Get current language
     const langCode = window.getCurrentLanguage ? window.getCurrentLanguage() : 'en';
     
-    // ... rest of existing code ...
+    // Normalize language code (tl → ta)
+    let normalizedLang = langCode;
+    if (langCode === 'tl') normalizedLang = 'ta';
+    if (langCode === 'ceb') normalizedLang = 'ce';
     
-    // Listen for audio completion
-    startupAudio.onended = () => {
+    // Map step number to audio file
+    let audioKey = '';
+    if (step === 1) audioKey = 'access';
+    else if (step === 2) audioKey = 'initialize';
+    else if (step === 3) audioKey = 'ready';
+    
+    // Get audio file path
+    const audioFiles = STARTUP_AUDIO_FILES[normalizedLang] || STARTUP_AUDIO_FILES.en;
+    const audioPath = audioFiles[audioKey];
+    
+    if (!audioPath) {
+      // No audio file, just wait a bit
       setTimeout(() => {
-        // RESUME voice recognition after speaking
+        // RESUME voice recognition
         if (wasListening) {
-          console.log('[CAMERA] Resuming voice recognition');
+          console.log('[CAMERA] Resuming voice recognition (no audio)');
           window.voiceRecognition.start();
         }
         resolve();
-      }, 300);
+      }, 500);
+      return;
+    }
+
+    // Set up audio
+    startupAudio.src = audioPath;
+    startupAudio.currentTime = 0;
+
+    // Listen for audio completion
+    startupAudio.onended = () => {
+      setTimeout(() => {
+        // RESUME voice recognition after audio ends
+        if (wasListening) {
+          console.log('[CAMERA] Resuming voice recognition after audio');
+          window.voiceRecognition.start();
+        }
+        resolve();
+      }, 300); // Small buffer after audio
     };
-    
+
     // Handle errors gracefully
     startupAudio.onerror = () => {
       console.warn('Audio file not found or failed to load:', audioPath);
       // RESUME voice recognition even on error
       if (wasListening) {
+        console.log('[CAMERA] Resuming voice recognition (audio error)');
         window.voiceRecognition.start();
       }
-      setTimeout(resolve, 500);
+      setTimeout(resolve, 500); // Continue even if audio fails
     };
-    
+
     // Play audio
     startupAudio.play().catch(err => {
       console.warn('Audio play failed:', err);
       // RESUME voice recognition even on error
       if (wasListening) {
+        console.log('[CAMERA] Resuming voice recognition (play error)');
         window.voiceRecognition.start();
       }
-      setTimeout(resolve, 500);
+      setTimeout(resolve, 500); // Continue even if play fails
     });
   });
 }
